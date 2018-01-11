@@ -264,9 +264,17 @@ class DRUGAN():
             for epoch in range(0, max_epoch):
                 print("In the epoch ", epoch)
                 curr_lr = 2e-4 - epoch * 1e-5
+
+                # 打乱输入 A 与输入 B 的对应顺序
+                a = list(self.B_input)
+                random.shuffle(a)
+                self.B_input = np.array(a)
+
+                # 保存生成的图像
                 if (save_training_images):
                     print("Save the training images...")
                     self.save_training_images(sess, epoch)
+
                 for ptr in range(0, max_images):
                     print("In the iteration ", ptr)
 
