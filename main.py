@@ -19,7 +19,7 @@
         c. 判别器损失的计算方式不变，在生成器损失中加入 cycle loss 项
     （5）模型训练策略：
         a. 最优化算法采用 tf.train.AdamOptimizer 算法
-        b. 一次训练会进行 20 个 epoch，每个 epoch 中进行 1000 次迭代
+        b. 一次训练会进行 20 个 epoch，每个 epoch 中进行 500 次迭代
         c. 学习率 2e-4，每进行一个 epoch 的训练，学习率减少 1e-5
 '''
 import numpy as np
@@ -36,7 +36,7 @@ to_restore = True  # 是否存储检查点（参数）
 log_dir = "./output/log"  # 可视化日志路径
 ckpt_dir = "./output/checkpoint"  # 检查点路径
 
-max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
+max_images = 500  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 50  # 用于更新D的假图像的批次数
 max_epoch = 20  # 每次训练的epoch数目
 n_critic = 1  # 判别器训练的次数
@@ -274,7 +274,7 @@ class DRUGAN():
 
                     # Optimizing the D_B network
                     for i in range(n_critic):
-                        iter = (ptr + i) if (ptr + i) < 1000 else (ptr + i) - 1000
+                        iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
                         fake_B = sess.run(self.fake_B, feed_dict={self.input_A: self.A_input[iter]})
                         fake_B_temp = self.fake_image_pool(self.num_fake_inputs, fake_B, self.fake_images_B)
                         _, summary_str = sess.run(
@@ -299,7 +299,7 @@ class DRUGAN():
 
                     # Optimizing the D_A network
                     for i in range(n_critic):
-                        iter = (ptr + i) if (ptr + i) < 1000 else (ptr + i) - 1000
+                        iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
                         fake_A = sess.run(self.fake_A, feed_dict={self.input_B: self.B_input[iter]})
                         fake_A_temp = self.fake_image_pool(self.num_fake_inputs, fake_A, self.fake_images_A)
                         _, summary_str = sess.run(
@@ -343,7 +343,7 @@ class DRUGAN():
             if not os.path.exists("./output/test/"):
                 os.makedirs("./output/test/")
             print("Testing loop...")
-            for i in range(0, 1000):
+            for i in range(0, max_images):
                 print("In the iteration ", i)
                 fake_A_temp, fake_B_temp = sess.run(
                     [self.fake_A, self.fake_B],
