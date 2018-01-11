@@ -7,7 +7,6 @@ img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
 img_layer = 3  # 图像通道
 img_size = img_height * img_width  # 图像尺寸
-
 batch_size = 1  # 一个批次的数据中图像的个数
 
 ngf = 32
