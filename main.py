@@ -266,9 +266,16 @@ class DRUGAN():
                 curr_lr = 2e-4 - epoch * 1e-5
 
                 # 打乱输入 A 与输入 B 的对应顺序
-                a = list(self.B_input)
+                a = list(self.A_input)
                 random.shuffle(a)
-                self.B_input = np.array(a)
+                self.A_input = np.array(a)
+
+                b = list(self.B_input)
+                random.shuffle(b)
+                self.B_input = np.array(b)
+
+                del a
+                del b
 
                 # 保存生成的图像
                 if (save_training_images):
