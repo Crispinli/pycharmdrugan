@@ -19,7 +19,7 @@
         c. 判别器损失的计算方式不变，在生成器损失中加入 cycle loss 项
     （5）模型训练策略：
         a. 最优化算法采用 tf.train.AdamOptimizer 算法
-        b. 一次训练会进行 20 个 epoch，每个 epoch 中进行 500 次迭代
+        b. 一次训练会进行 20 个 epoch，每个 epoch 中进行 1000 次迭代
         c. 学习率 2e-4，每进行一个 epoch 的训练，学习率减少 1e-5
 '''
 import numpy as np
@@ -36,7 +36,7 @@ to_restore = True  # 是否存储检查点（参数）
 log_dir = "./output/log"  # 可视化日志路径
 ckpt_dir = "./output/checkpoint"  # 检查点路径
 
-max_images = 500  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
+max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 50  # 用于更新D的假图像的批次数
 max_epoch = 20  # 每次训练的epoch数目
 n_critic = 1  # 判别器训练的次数
@@ -274,8 +274,7 @@ class DRUGAN():
                 random.shuffle(b)
                 self.B_input = np.array(b)
 
-                del a
-                del b
+                del a, b
 
                 # 保存生成的图像
                 if (save_training_images):
