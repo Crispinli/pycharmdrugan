@@ -55,8 +55,8 @@ class DRUGAN():
     def input_setup(self):
 
         # 获取图像的名字，得到文件名列表
-        self.filenames_A = tf.train.match_filenames_once("./input/horse2zebra/trainA/*.jpg")
-        self.filenames_B = tf.train.match_filenames_once("./input/horse2zebra/trainB/*.jpg")
+        self.filenames_A = tf.train.match_filenames_once("./input/horse2zebra/train_A/*.jpg")
+        self.filenames_B = tf.train.match_filenames_once("./input/horse2zebra/train_B/*.jpg")
 
         # 把文件名列表转换成队列
         filename_queue_A = tf.train.string_input_producer(self.filenames_A)
@@ -267,15 +267,15 @@ class DRUGAN():
                 curr_lr = 2e-4 - epoch * 1e-5
 
                 # 打乱输入 A 与输入 B 的对应顺序
-                a = list(self.A_input)
-                random.shuffle(a)
-                self.A_input = np.array(a)
-
-                b = list(self.B_input)
-                random.shuffle(b)
-                self.B_input = np.array(b)
-
-                del a, b
+                # a = list(self.A_input)
+                # random.shuffle(a)
+                # self.A_input = np.array(a)
+                #
+                # b = list(self.B_input)
+                # random.shuffle(b)
+                # self.B_input = np.array(b)
+                #
+                # del a, b
 
                 # 保存生成的图像
                 if (save_training_images):
