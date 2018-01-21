@@ -12,7 +12,7 @@ region = (42, 42, 214, 214)
 
 for name in filenames_A:
     path_A = os.path.join(root_A, name)
-    img = Image.open(path_A)
+    img = Image.open(path_A).resize([256, 256])
     img_1 = img.rotate(45).crop(region).resize(img.size)
     img_2 = img.rotate(-45).crop(region).resize(img.size)
     img_3 = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -27,7 +27,7 @@ count = 1
 
 for name in filenames_B:
     path_B = os.path.join(root_B, name)
-    img = Image.open(path_B)
+    img = Image.open(path_B).resize([256, 256])
     img_1 = img.rotate(45).crop(region).resize(img.size)
     img_2 = img.rotate(-45).crop(region).resize(img.size)
     img_3 = img.transpose(Image.FLIP_LEFT_RIGHT)

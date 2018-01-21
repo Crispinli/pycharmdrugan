@@ -25,11 +25,12 @@
 '''
 import numpy as np
 from scipy.misc import imsave
-import os
+from PIL import Image
 import random
 from model import discriminator
 from model import generator
 import tensorflow as tf
+import os
 
 to_train = True  # 是否训练
 to_test = True  # 是否测试
@@ -50,55 +51,14 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
+root_A = "./input/horse2zebra/train_A"
+root_B = "./input/horse2zebra/train_B"
+
 
 class DRUGAN():
-    def input_setup(self):
-
-        # 获取图像的名字，得到文件名列表
-        self.filenames_A = tf.train.match_filenames_once("./input/horse2zebra/train_A/*.jpg")
-        self.filenames_B = tf.train.match_filenames_once("./input/horse2zebra/train_B/*.jpg")
-
-        # 把文件名列表转换成队列
-        filename_queue_A = tf.train.string_input_producer(self.filenames_A)
-        filename_queue_B = tf.train.string_input_producer(self.filenames_B)
-
-        # 从队列中读取图像
-        image_reader = tf.WholeFileReader()
-        _, image_file_A = image_reader.read(filename_queue_A)
-        _, image_file_B = image_reader.read(filename_queue_B)
-
-        # 转换图像格式，并做灰度处理
-        self.image_A = tf.subtract(
-            tf.div(tf.image.resize_images(tf.image.decode_jpeg(image_file_A), [256, 256]), 127.5), 1)
-        self.image_B = tf.subtract(
-            tf.div(tf.image.resize_images(tf.image.decode_jpeg(image_file_B), [256, 256]), 127.5), 1)
-
-    def input_read(self, sess):
-
-        # Loading images into the tensors
-        coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-
+    def model_setup(self):
         self.fake_images_A = np.zeros((pool_size, 1, img_height, img_width, img_layer))
         self.fake_images_B = np.zeros((pool_size, 1, img_height, img_width, img_layer))
-
-        self.A_input = np.zeros((max_images, batch_size, img_height, img_width, img_layer))
-        self.B_input = np.zeros((max_images, batch_size, img_height, img_width, img_layer))
-
-        for i in range(max_images):
-            image_tensor = sess.run(self.image_A)
-            if (image_tensor.size == img_size * batch_size * img_layer):
-                self.A_input[i] = image_tensor.reshape((batch_size, img_height, img_width, img_layer))
-
-        for i in range(max_images):
-            image_tensor = sess.run(self.image_B)
-            if (image_tensor.size == img_size * batch_size * img_layer):
-                self.B_input[i] = image_tensor.reshape((batch_size, img_height, img_width, img_layer))
-
-        coord.request_stop()
-        coord.join(threads)
-
-    def model_setup(self):
 
         self.input_A = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_A")
         self.input_B = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_B")
@@ -131,7 +91,6 @@ class DRUGAN():
             self.fake_pool_rec_B = discriminator(self.fake_pool_B, "d_B")
 
     def loss_calc(self):
-
         ####################
         # cycle loss
         ####################
@@ -195,15 +154,17 @@ class DRUGAN():
         self.d_A_loss_summ = tf.summary.scalar("d_A_loss", self.d_loss_A)
         self.d_B_loss_summ = tf.summary.scalar("d_B_loss", self.d_loss_B)
 
-    def save_training_images(self, sess, epoch):
-
+    def save_training_images(self, sess, epoch, A_input, B_input):
         if not os.path.exists("./output/imgs"):
             os.makedirs("./output/imgs")
-
         for i in range(0, 10):
+            path_A = os.path.join(root_A, A_input[i])
+            path_B = os.path.join(root_B, B_input[i])
+            img_A = np.array(Image.open(path_A)).reshape([1,256,256,-1]) / 127.5 - 1
+            img_B = np.array(Image.open(path_B)).reshape([1,256,256,-1]) / 127.5 - 1
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run(
                 [self.fake_A, self.fake_B, self.cyc_A, self.cyc_B],
-                feed_dict={self.input_A: self.A_input[i], self.input_B: self.B_input[i]}
+                feed_dict={self.input_A: img_A, self.input_B: img_B}
             )
             imsave("./output/imgs/fakeA_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((fake_A_temp[0] + 1) * 127.5).astype(np.uint8))
@@ -214,12 +175,11 @@ class DRUGAN():
             imsave("./output/imgs/cycB_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((cyc_B_temp[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/inputA_" + str(epoch) + "_" + str(i) + ".jpg",
-                   ((self.A_input[i][0] + 1) * 127.5).astype(np.uint8))
+                   ((img_A[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/inputB_" + str(epoch) + "_" + str(i) + ".jpg",
-                   ((self.B_input[i][0] + 1) * 127.5).astype(np.uint8))
+                   ((img_B[0] + 1) * 127.5).astype(np.uint8))
 
     def fake_image_pool(self, num_fakes, fake, fake_pool):
-
         if (num_fakes < pool_size):
             fake_pool[num_fakes] = fake
             return fake
@@ -234,15 +194,14 @@ class DRUGAN():
                 return fake
 
     def train(self):
-
         ''' Training Function '''
-
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         if not os.path.exists(ckpt_dir):
             os.makedirs(ckpt_dir)
         print("Load Dataset from the dataset folder...")
-        self.input_setup()
+        A_input = os.listdir(root_A)
+        B_input = os.listdir(root_B)
         print("Build the network...")
         self.model_setup()
         print("Loss function calculations...")
@@ -254,8 +213,6 @@ class DRUGAN():
             print("Initializing the global variables...")
             init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
             sess.run(init)
-            print("Read input to nd array...")
-            self.input_read(sess)
             print("Restore the model to run it from last checkpoint...")
             if to_restore:
                 chkpt_fname = tf.train.latest_checkpoint(ckpt_dir)
@@ -264,39 +221,35 @@ class DRUGAN():
             print("Training Loop...")
             for epoch in range(0, max_epoch):
                 print("In the epoch ", epoch)
+                # 每进行一个 epoch 则调整一次学习率
                 curr_lr = 2e-4 - epoch * 1e-5
-
                 # 打乱输入 A 与输入 B 的对应顺序
-                a = list(self.A_input)
-                random.shuffle(a)
-                self.A_input = np.array(a)
-
-                b = list(self.B_input)
-                random.shuffle(b)
-                self.B_input = np.array(b)
-
-                del a, b
-
+                random.shuffle(A_input)
+                random.shuffle(B_input)
                 # 保存生成的图像
                 if (save_training_images):
                     print("Save the training images...")
-                    self.save_training_images(sess, epoch)
-
+                    self.save_training_images(sess, epoch, A_input, B_input)
                 for ptr in range(0, max_images):
                     print("In the iteration ", ptr)
 
-                    summary_str = None
+                    # 获取训练数据
+                    path_A = os.path.join(root_A, A_input[ptr])
+                    path_B = os.path.join(root_B, B_input[ptr])
+                    img_A = np.array(Image.open(path_A)).reshape([1,256,256,-1]) / 127.5 - 1
+                    img_B = np.array(Image.open(path_B)).reshape([1,256,256,-1]) / 127.5 - 1
 
+                    summary_str = None
                     # Optimizing the D_B network
                     for i in range(n_critic):
                         iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
-                        fake_B = sess.run(self.fake_B, feed_dict={self.input_A: self.A_input[iter]})
+                        fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A})
                         fake_B_temp = self.fake_image_pool(self.num_fake_inputs, fake_B, self.fake_images_B)
                         _, summary_str = sess.run(
                             [self.d_B_trainer, self.d_B_loss_summ],
                             feed_dict={
-                                self.input_A: self.A_input[iter],
-                                self.input_B: self.B_input[iter],
+                                self.input_A: img_A,
+                                self.input_B: img_B,
                                 self.lr: curr_lr,
                                 self.fake_pool_B: fake_B_temp}
                         )
@@ -306,8 +259,8 @@ class DRUGAN():
                     _, summary_str = sess.run(
                         [self.g_A_trainer, self.g_A_loss_summ],
                         feed_dict={
-                            self.input_A: self.A_input[ptr],
-                            self.input_B: self.B_input[ptr],
+                            self.input_A: img_A,
+                            self.input_B: img_B,
                             self.lr: curr_lr}
                     )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
@@ -315,13 +268,13 @@ class DRUGAN():
                     # Optimizing the D_A network
                     for i in range(n_critic):
                         iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
-                        fake_A = sess.run(self.fake_A, feed_dict={self.input_B: self.B_input[iter]})
+                        fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B})
                         fake_A_temp = self.fake_image_pool(self.num_fake_inputs, fake_A, self.fake_images_A)
                         _, summary_str = sess.run(
                             [self.d_A_trainer, self.d_A_loss_summ],
                             feed_dict={
-                                self.input_A: self.A_input[iter],
-                                self.input_B: self.B_input[iter],
+                                self.input_A: img_A,
+                                self.input_B: img_B,
                                 self.lr: curr_lr,
                                 self.fake_pool_A: fake_A_temp}
                         )
@@ -331,8 +284,8 @@ class DRUGAN():
                     _, summary_str = sess.run(
                         [self.g_B_trainer, self.g_B_loss_summ],
                         feed_dict={
-                            self.input_A: self.A_input[ptr],
-                            self.input_B: self.B_input[ptr],
+                            self.input_A: img_A,
+                            self.input_B: img_B,
                             self.lr: curr_lr}
                     )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
@@ -345,13 +298,13 @@ class DRUGAN():
 
         ''' Testing Function'''
 
-        self.input_setup()
+        A_input = os.listdir(root_A)
+        B_input = os.listdir(root_B)
         self.model_setup()
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
         with tf.Session() as sess:
             sess.run(init)
-            self.input_read(sess)
             chkpt_fname = tf.train.latest_checkpoint(ckpt_dir)
             print("Restore the model...")
             saver.restore(sess, chkpt_fname)
@@ -359,17 +312,24 @@ class DRUGAN():
                 os.makedirs("./output/test/")
             print("Testing loop...")
             for i in range(0, max_images):
+
+                # 获取测试数据
+                path_A = os.path.join(root_A, A_input[i])
+                path_B = os.path.join(root_B, B_input[i])
+                img_A = np.array(Image.open(path_A)).reshape([1,256,256,-1]) / 127.5 - 1
+                img_B = np.array(Image.open(path_B)).reshape([1,256,256,-1]) / 127.5 - 1
+
                 print("In the iteration ", i)
                 fake_A_temp, fake_B_temp = sess.run(
                     [self.fake_A, self.fake_B],
                     feed_dict={
-                        self.input_A: self.A_input[i],
-                        self.input_B: self.B_input[i]}
+                        self.input_A: img_A,
+                        self.input_B: img_B}
                 )
                 imsave("./output/test/fakeA_" + str(i) + ".jpg", ((fake_A_temp[0] + 1) * 127.5).astype(np.uint8))
                 imsave("./output/test/fakeB_" + str(i) + ".jpg", ((fake_B_temp[0] + 1) * 127.5).astype(np.uint8))
-                imsave("./output/test/inputA_" + str(i) + ".jpg", ((self.A_input[i][0] + 1) * 127.5).astype(np.uint8))
-                imsave("./output/test/inputB_" + str(i) + ".jpg", ((self.B_input[i][0] + 1) * 127.5).astype(np.uint8))
+                imsave("./output/test/inputA_" + str(i) + ".jpg", ((img_A[0] + 1) * 127.5).astype(np.uint8))
+                imsave("./output/test/inputB_" + str(i) + ".jpg", ((img_B[0] + 1) * 127.5).astype(np.uint8))
 
 
 def main():
