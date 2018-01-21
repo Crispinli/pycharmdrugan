@@ -160,8 +160,12 @@ class DRUGAN():
         for i in range(0, 10):
             path_A = os.path.join(root_A, A_input[i])
             path_B = os.path.join(root_B, B_input[i])
-            img_A = np.array(Image.open(path_A)).reshape([1,256,256,-1]) / 127.5 - 1
-            img_B = np.array(Image.open(path_B)).reshape([1,256,256,-1]) / 127.5 - 1
+            try:
+                img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+            except:
+                print("The number of channels is not 3, skip this iteration...")
+                continue
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run(
                 [self.fake_A, self.fake_B, self.cyc_A, self.cyc_B],
                 feed_dict={self.input_A: img_A, self.input_B: img_B}
@@ -236,8 +240,12 @@ class DRUGAN():
                     # 获取训练数据
                     path_A = os.path.join(root_A, A_input[ptr])
                     path_B = os.path.join(root_B, B_input[ptr])
-                    img_A = np.array(Image.open(path_A)).reshape([1,256,256,-1]) / 127.5 - 1
-                    img_B = np.array(Image.open(path_B)).reshape([1,256,256,-1]) / 127.5 - 1
+                    try:
+                        img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                    except:
+                        print("The number of channels is not 3, skip this iteration...")
+                        continue
 
                     summary_str = None
                     # Optimizing the D_B network
@@ -316,8 +324,12 @@ class DRUGAN():
                 # 获取测试数据
                 path_A = os.path.join(root_A, A_input[i])
                 path_B = os.path.join(root_B, B_input[i])
-                img_A = np.array(Image.open(path_A)).reshape([1,256,256,-1]) / 127.5 - 1
-                img_B = np.array(Image.open(path_B)).reshape([1,256,256,-1]) / 127.5 - 1
+                try:
+                    img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                    img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                except:
+                    print("The number of channels is not 3, skip this iteration...")
+                    continue
 
                 print("In the iteration ", i)
                 fake_A_temp, fake_B_temp = sess.run(
