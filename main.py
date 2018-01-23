@@ -308,6 +308,8 @@ class DRUGAN():
 
         A_input = os.listdir(root_A)
         B_input = os.listdir(root_B)
+        random.shuffle(A_input)
+        random.shuffle(B_input)
         self.model_setup()
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
