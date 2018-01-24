@@ -306,10 +306,8 @@ class DRUGAN():
 
         ''' Testing Function'''
 
-        A_input = os.listdir(root_A)
-        B_input = os.listdir(root_B)
-        random.shuffle(A_input)
-        random.shuffle(B_input)
+        A_input = sorted(os.listdir(root_A))
+        B_input = sorted(os.listdir(root_B))
         self.model_setup()
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -321,8 +319,7 @@ class DRUGAN():
             if not os.path.exists("./output/test/"):
                 os.makedirs("./output/test/")
             print("Testing loop...")
-            for i in range(0, max_images):
-
+            for i in range(0, min(len(A_input), len(B_input)), 4):
                 # 获取测试数据
                 path_A = os.path.join(root_A, A_input[i])
                 path_B = os.path.join(root_B, B_input[i])
