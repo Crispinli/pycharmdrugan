@@ -225,8 +225,9 @@ class DRUGAN():
             print("Training Loop...")
             for epoch in range(0, max_epoch):
                 print("In the epoch ", epoch)
-                # 每进行一个 epoch 则调整一次学习率
-                curr_lr = 2e-4 - epoch * 2e-6
+                # 按照条件调整学习率
+                if epoch % 5 == 0:
+                    curr_lr = 2e-4 - (epoch / 5) * 1e-5
                 # 打乱输入 A 与输入 B 的对应顺序
                 random.shuffle(A_input)
                 random.shuffle(B_input)
