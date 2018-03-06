@@ -20,7 +20,7 @@
     （5）模型训练策略：
         a. 最优化算法采用 tf.train.AdamOptimizer 算法
         b. 一次训练会进行 100 个 epoch，每个 epoch 中进行 1000 次迭代
-        c. 学习率 2e-4，每进行一个 epoch 的训练，学习率减少 2e-6
+        c. 学习率 2e-4，每进行 5 个 epoch 的训练，学习率减少 1e-5
         d. 训练中每个 epoch 都会打乱输入 A 和输入 B 的对应顺序
 '''
 import numpy as np
@@ -346,10 +346,10 @@ class DRUGAN():
 
 def main():
     model = DRUGAN()
-    if to_train:
-        model.train()
-    # if to_test:
-    #     model.test()
+    # if to_train:
+    #     model.train()
+    if to_test:
+        model.test()
 
 
 if __name__ == '__main__':
