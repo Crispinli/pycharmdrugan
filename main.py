@@ -51,8 +51,8 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/horse2zebra/train_A"
-root_B = "./input/horse2zebra/train_B"
+root_A = "./input/monet2photo/trainA"
+root_B = "./input/monet2photo/trainB"
 
 
 class DRUGAN():
