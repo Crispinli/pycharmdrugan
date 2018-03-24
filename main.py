@@ -320,7 +320,7 @@ class DRUGAN():
             if not os.path.exists("./output/test/"):
                 os.makedirs("./output/test/")
             print("Testing loop...")
-            for i in range(0, min(len(A_input), len(B_input)), 4):
+            for i in range(0, min(len(A_input), len(B_input))):
                 # 获取测试数据
                 path_A = os.path.join(root_A, A_input[i])
                 path_B = os.path.join(root_B, B_input[i])
