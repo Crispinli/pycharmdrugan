@@ -53,6 +53,8 @@ save_training_images = True  # 是否存储训练数据
 
 root_A = "./input/monet2photo/trainA"
 root_B = "./input/monet2photo/trainB"
+test_root_A = "./input/monet2photo/testA"
+test_root_B = "./input/monet2photo/testB"
 
 
 class DRUGAN():
@@ -307,8 +309,8 @@ class DRUGAN():
 
         ''' Testing Function'''
 
-        A_input = sorted(os.listdir(root_A))
-        B_input = sorted(os.listdir(root_B))
+        A_input = sorted(os.listdir(test_root_A))
+        B_input = sorted(os.listdir(test_root_B))
         self.model_setup()
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -322,8 +324,8 @@ class DRUGAN():
             print("Testing loop...")
             for i in range(0, min(len(A_input), len(B_input))):
                 # 获取测试数据
-                path_A = os.path.join(root_A, A_input[i])
-                path_B = os.path.join(root_B, B_input[i])
+                path_A = os.path.join(test_root_A, A_input[i])
+                path_B = os.path.join(test_root_B, B_input[i])
                 try:
                     img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
                     img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
