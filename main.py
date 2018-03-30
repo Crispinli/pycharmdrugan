@@ -240,20 +240,18 @@ class DRUGAN():
                 for ptr in range(0, max_images):
                     print("In the iteration ", ptr)
 
-                    # 获取训练数据
-                    path_A = os.path.join(root_A, A_input[ptr])
-                    path_B = os.path.join(root_B, B_input[ptr])
-                    try:
-                        img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                        img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                    except:
-                        print("Can not open this image, skip this iteration...")
-                        continue
-
                     summary_str = None
                     # Optimizing the D_B network
                     for i in range(n_critic):
                         iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
+                        path_A = os.path.join(root_A, A_input[iter])
+                        path_B = os.path.join(root_B, B_input[iter])
+                        try:
+                            img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        except:
+                            print("Can not open this image, skip this iteration...")
+                            continue
                         fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A})
                         fake_B_temp = self.fake_image_pool(self.num_fake_inputs, fake_B, self.fake_images_B)
                         _, summary_str = sess.run(
@@ -265,6 +263,16 @@ class DRUGAN():
                                 self.fake_pool_B: fake_B_temp}
                         )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
+
+                    # 获取训练数据
+                    path_A = os.path.join(root_A, A_input[ptr])
+                    path_B = os.path.join(root_B, B_input[ptr])
+                    try:
+                        img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                    except:
+                        print("Can not open this image, skip this iteration...")
+                        continue
 
                     # Optimizing the G_A network
                     _, summary_str = sess.run(
@@ -279,6 +287,14 @@ class DRUGAN():
                     # Optimizing the D_A network
                     for i in range(n_critic):
                         iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
+                        path_A = os.path.join(root_A, A_input[iter])
+                        path_B = os.path.join(root_B, B_input[iter])
+                        try:
+                            img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        except:
+                            print("Can not open this image, skip this iteration...")
+                            continue
                         fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B})
                         fake_A_temp = self.fake_image_pool(self.num_fake_inputs, fake_A, self.fake_images_A)
                         _, summary_str = sess.run(
@@ -290,6 +306,16 @@ class DRUGAN():
                                 self.fake_pool_A: fake_A_temp}
                         )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
+
+                    # 获取训练数据
+                    path_A = os.path.join(root_A, A_input[ptr])
+                    path_B = os.path.join(root_B, B_input[ptr])
+                    try:
+                        img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                    except:
+                        print("Can not open this image, skip this iteration...")
+                        continue
 
                     # Optimizing the G_B network
                     _, summary_str = sess.run(
