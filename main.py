@@ -41,7 +41,7 @@ ckpt_dir = "./output/checkpoint"  # 检查点路径
 max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 100  # 用于更新D的假图像的批次数
 max_epoch = 100  # 每次训练的epoch数目
-n_critic = 1  # 判别器训练的次数
+n_critic = 3  # 判别器训练的次数
 
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
@@ -166,7 +166,7 @@ class DRUGAN():
                 img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
                 img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
             except:
-                print("The number of channels is not 3, skip this iteration...")
+                print("Can not open this image, skip this iteration...")
                 continue
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run(
                 [self.fake_A, self.fake_B, self.cyc_A, self.cyc_B],
@@ -247,7 +247,7 @@ class DRUGAN():
                         img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
                         img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
                     except:
-                        print("The number of channels is not 3, skip this iteration...")
+                        print("Can not open this image, skip this iteration...")
                         continue
 
                     summary_str = None
@@ -306,9 +306,7 @@ class DRUGAN():
                 saver.save(sess, os.path.join(ckpt_dir, "drugan"), global_step=epoch)
 
     def test(self):
-
         ''' Testing Function'''
-
         A_input = sorted(os.listdir(test_root_A))
         B_input = sorted(os.listdir(test_root_B))
         self.model_setup()
@@ -330,7 +328,7 @@ class DRUGAN():
                     img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
                     img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
                 except:
-                    print("The number of channels is not 3, skip this iteration...")
+                    print("Can not open this image, skip this iteration...")
                     continue
 
                 print("In the iteration ", i)
