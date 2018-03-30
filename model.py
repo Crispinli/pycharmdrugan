@@ -43,15 +43,15 @@ def generator(inputgen, name="generator"):
         o_r8 = residual(o_r7, ngf * 4, "r8")
         o_r9 = residual(o_r8, ngf * 4, "r9")
 
-        norm4, _ = deconv2d(o_r9, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c4")
-        o_c4_c2 = tf.concat(axis=3, values=[norm4, norm2], name="o_c4_c2")
-        _, o_c4 = conv2d(o_c4_c2, ngf * 2, ks, ks, 1, 1, 0.02, "SAME", "o_c4_merge")
+        norm4, _ = deconv2d(o_r9, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c4", relufactor=0.2)
+        o_c4 = tf.concat(axis=3, values=[norm4, norm2], name="o_c4_c2")
+        # _, o_c4 = conv2d(o_c4_c2, ngf * 2, ks, ks, 1, 1, 0.02, "SAME", "o_c4_merge")
 
-        norm5, _ = deconv2d(o_c4, ngf, ks, ks, 2, 2, 0.02, "SAME", "c5")
-        o_c5_c1 = tf.concat(axis=3, values=[norm5, norm1], name="o_c5_c1")
-        _, o_c5 = conv2d(o_c5_c1, ngf, ks, ks, 1, 1, 0.02, "SAME", "o_c5_merge")
+        norm5, _ = deconv2d(o_c4, ngf, ks, ks, 2, 2, 0.02, "SAME", "c5", relufactor=0.2)
+        o_c5 = tf.concat(axis=3, values=[norm5, norm1], name="o_c5_c1")
+        # _, o_c5 = conv2d(o_c5_c1, ngf, ks, ks, 1, 1, 0.02, "SAME", "o_c5_merge")
 
-        norm6, _ = conv2d(o_c5, img_layer, f, f, 1, 1, 0.02, "SAME", "c6")
+        norm6, _ = conv2d(o_c5, img_layer, f, f, 1, 1, 0.02, "SAME", "c6", relufactor=0.2)
         o_c6_input = tf.concat(axis=3, values=[norm6, inputgen], name="o_c6_input")
         _, o_c6 = conv2d(o_c6_input, img_layer, f, f, 1, 1, 0.02, "SAME", "o_c6_merge", do_relu=False)
 
