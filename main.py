@@ -4,7 +4,7 @@
         a. 整体结构类似 CycleGAN 模型，并且进行了改进
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
-        d. 对每个 GAN 的判别器进行 1 次优化，然后对生成器进行 1 次优化
+        d. 对每个 GAN 的判别器进行 3 次优化，然后对生成器进行 1 次优化
     （2）生成器 generator 的结构：
         a. 整体结构类似 U-Net 模型的形式，并且进行了改进
         b. 在模型的 bottom 部分，包含 9 个残差块
@@ -12,7 +12,7 @@
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
         b. 输出是一个经过编码操作的图像块
-        c. 输入是全图像的形式，尺寸为 [1, 256, 256, 3]
+        c. 输入是图像全图的形式，尺寸为 [1, 70, 70, 3]
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进
@@ -96,7 +96,8 @@ class DRUGAN():
         ####################
         # cycle loss
         ####################
-        cyc_loss = tf.reduce_mean(tf.abs(self.input_A - self.cyc_A) + tf.abs(self.input_B - self.cyc_B))
+        cyc_loss_A = tf.reduce_mean(tf.abs(self.input_A - self.cyc_A))
+        cyc_loss_B = tf.reduce_mean(tf.abs(self.input_B - self.cyc_B))
 
         ####################
         # standard generator loss of g_A and g_B
@@ -115,7 +116,7 @@ class DRUGAN():
             gradients_B = tf.gradients(discriminator(interpolates_B, name="d_B"), [interpolates_B])[0]
         slopes_B = tf.sqrt(tf.reduce_sum(tf.square(gradients_B), reduction_indices=[1]))
         gradients_penalty_B = tf.reduce_mean((slopes_B - 1.0) ** 2)
-        disc_loss_B += 10 * gradients_penalty_B
+        disc_loss_B += 5 * gradients_penalty_B
 
         ####################
         # discriminator loss with gradient penalty of d_A
@@ -128,10 +129,10 @@ class DRUGAN():
             gradients_A = tf.gradients(discriminator(interpolates_A, name="d_A"), [interpolates_A])[0]
         slopes_A = tf.sqrt(tf.reduce_sum(tf.square(gradients_A), reduction_indices=[1]))
         gradients_penalty_A = tf.reduce_mean((slopes_A - 1.0) ** 2)
-        disc_loss_A += 10 * gradients_penalty_A
+        disc_loss_A += 5 * gradients_penalty_A
 
-        self.g_loss_A = cyc_loss * 10 + gen_loss_A  # g_A的损失函数
-        self.g_loss_B = cyc_loss * 10 + gen_loss_B  # g_B的损失函数
+        self.g_loss_A = cyc_loss_A * 100 + cyc_loss_B * 100 + gen_loss_A  # g_A的损失函数
+        self.g_loss_B = cyc_loss_A * 100 + cyc_loss_B * 100 + gen_loss_B  # g_B的损失函数
         self.d_loss_A = disc_loss_A  # d_A的损失函数
         self.d_loss_B = disc_loss_B  # d_B的损失函数
 
@@ -240,30 +241,6 @@ class DRUGAN():
                 for ptr in range(0, max_images):
                     print("In the iteration ", ptr)
 
-                    summary_str = None
-                    # Optimizing the D_B network
-                    for i in range(n_critic):
-                        iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
-                        path_A = os.path.join(root_A, A_input[iter])
-                        path_B = os.path.join(root_B, B_input[iter])
-                        try:
-                            img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                            img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                        except:
-                            print("Can not open this image, skip this iteration...")
-                            continue
-                        fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A})
-                        fake_B_temp = self.fake_image_pool(self.num_fake_inputs, fake_B, self.fake_images_B)
-                        _, summary_str = sess.run(
-                            [self.d_B_trainer, self.d_B_loss_summ],
-                            feed_dict={
-                                self.input_A: img_A,
-                                self.input_B: img_B,
-                                self.lr: curr_lr,
-                                self.fake_pool_B: fake_B_temp}
-                        )
-                    writer.add_summary(summary_str, epoch * max_images + ptr)
-
                     # 获取训练数据
                     path_A = os.path.join(root_A, A_input[ptr])
                     path_B = os.path.join(root_B, B_input[ptr])
@@ -273,6 +250,30 @@ class DRUGAN():
                     except:
                         print("Can not open this image, skip this iteration...")
                         continue
+
+                    summary_str = None
+                    # Optimizing the D_B network
+                    for i in range(n_critic):
+                        iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
+                        path_A_D = os.path.join(root_A, A_input[iter])
+                        path_B_D = os.path.join(root_B, B_input[iter])
+                        try:
+                            img_A_D = np.array(Image.open(path_A_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_B_D = np.array(Image.open(path_B_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        except:
+                            print("Can not open this image, skip this iteration...")
+                            continue
+                        fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A_D})
+                        fake_B_temp = self.fake_image_pool(self.num_fake_inputs, fake_B, self.fake_images_B)
+                        _, summary_str = sess.run(
+                            [self.d_B_trainer, self.d_B_loss_summ],
+                            feed_dict={
+                                self.input_A: img_A_D,
+                                self.input_B: img_B_D,
+                                self.lr: curr_lr,
+                                self.fake_pool_B: fake_B_temp}
+                        )
+                    writer.add_summary(summary_str, epoch * max_images + ptr)
 
                     # Optimizing the G_A network
                     _, summary_str = sess.run(
@@ -287,35 +288,25 @@ class DRUGAN():
                     # Optimizing the D_A network
                     for i in range(n_critic):
                         iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
-                        path_A = os.path.join(root_A, A_input[iter])
-                        path_B = os.path.join(root_B, B_input[iter])
+                        path_A_D = os.path.join(root_A, A_input[iter])
+                        path_B_D = os.path.join(root_B, B_input[iter])
                         try:
-                            img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                            img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_A_D = np.array(Image.open(path_A_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_B_D = np.array(Image.open(path_B_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
                         except:
                             print("Can not open this image, skip this iteration...")
                             continue
-                        fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B})
+                        fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B_D})
                         fake_A_temp = self.fake_image_pool(self.num_fake_inputs, fake_A, self.fake_images_A)
                         _, summary_str = sess.run(
                             [self.d_A_trainer, self.d_A_loss_summ],
                             feed_dict={
-                                self.input_A: img_A,
-                                self.input_B: img_B,
+                                self.input_A: img_A_D,
+                                self.input_B: img_B_D,
                                 self.lr: curr_lr,
                                 self.fake_pool_A: fake_A_temp}
                         )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
-
-                    # 获取训练数据
-                    path_A = os.path.join(root_A, A_input[ptr])
-                    path_B = os.path.join(root_B, B_input[ptr])
-                    try:
-                        img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                        img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                    except:
-                        print("Can not open this image, skip this iteration...")
-                        continue
 
                     # Optimizing the G_B network
                     _, summary_str = sess.run(

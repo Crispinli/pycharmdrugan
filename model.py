@@ -62,7 +62,7 @@ def generator(inputgen, name="generator"):
 
 def discriminator(inputdisc, name="discriminator"):
     with tf.variable_scope(name):
-        f = 4
+        f = 3
 
         _, o_c1 = conv2d(inputdisc, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)
         _, o_c2 = conv2d(o_c1, ndf * 2, f, f, 2, 2, 0.02, "SAME", "c2", relufactor=0.2)
