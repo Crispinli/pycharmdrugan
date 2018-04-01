@@ -1,6 +1,6 @@
 from layers import lrelu
 from layers import conv2d
-from layers import deconv2d
+from layers import upsample
 import tensorflow as tf
 
 img_height = 256  # 图像高度
@@ -44,13 +44,16 @@ def generator(inputgen, name="generator"):
         o_r8 = residual(o_r7, ngf * 8, "r8")
         o_r9 = residual(o_r8, ngf * 8, "r9")
 
-        norm5, _ = deconv2d(o_r9, ngf * 4, ks, ks, 2, 2, 0.02, "SAME", "c5")
+        norm5 = upsample(o_r9, scale=2, name="up5")
+        norm5, _ = conv2d(norm5, ngf * 4, ks, ks, 1, 1, 0.02, "SAME", "c5")
         o_c5 = tf.concat(axis=3, values=[norm5, norm3], name="o_c5_c3")
 
-        norm6, _ = deconv2d(o_c5, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c6")
+        norm6 = upsample(o_c5, scale=2, name="up6")
+        norm6, _ = conv2d(norm6, ngf * 2, ks, ks, 1, 1, 0.02, "SAME", "c6")
         o_c6 = tf.concat(axis=3, values=[norm6, norm2], name="o_c6_c2")
 
-        norm7, _ = deconv2d(o_c6, ngf, ks, ks, 2, 2, 0.02, "SAME", "c7")
+        norm7 = upsample(o_c6, scale=2, name="up7")
+        norm7, _ = conv2d(norm7, ngf * 1, ks, ks, 1, 1, 0.02, "SAME", "c7")
         o_c7 = tf.concat(axis=3, values=[norm7, norm1], name="o_c7_c1")
 
         norm8, _ = conv2d(o_c7, img_layer, f, f, 1, 1, 0.02, "SAME", "c8")
