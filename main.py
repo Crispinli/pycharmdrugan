@@ -4,7 +4,7 @@
         a. 整体结构类似 CycleGAN 模型，并且进行了改进
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
-        d. 对每个 GAN 的判别器进行 3 次优化，然后对生成器进行 1 次优化
+        d. 对每个 GAN 的判别器进行 1 次优化，然后对生成器进行 1 次优化
     （2）生成器 generator 的结构：
         a. 整体结构类似 U-Net 模型的形式，并且进行了改进
         b. 在模型的 bottom 部分，包含 9 个残差块
@@ -12,15 +12,15 @@
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
         b. 输出是一个经过编码操作的图像块
-        c. 输入是图像全图的形式，尺寸为 [1, 70, 70, 3]
+        c. 输入是图像全图的形式，尺寸为 [1, 256, 256, 3]
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进
-        c. 判别器损失的计算方式不变，在生成器损失中加入 cycle loss 项
+        c. 判别器损失的计算方式不变，在生成器损失中加入重新定义的 cycle loss 项
     （5）模型训练策略：
         a. 最优化算法采用 tf.train.AdamOptimizer 算法
         b. 一次训练会进行 100 个 epoch，每个 epoch 中进行 1000 次迭代
-        c. 学习率 2e-4，每进行 5 个 epoch 的训练，学习率减少 1e-5
+        c. 初始学习率为 2e-4，每进行 1 个 epoch 的训练，学习率便乘以 decay_rate
         d. 训练中每个 epoch 都会打乱输入 A 和输入 B 的对应顺序
 '''
 import numpy as np
@@ -41,7 +41,7 @@ ckpt_dir = "./output/checkpoint"  # 检查点路径
 max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 100  # 用于更新D的假图像的批次数
 max_epoch = 100  # 每次训练的epoch数目
-n_critic = 3  # 判别器训练的次数
+n_critic = 1  # 判别器训练的次数
 
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
