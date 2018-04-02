@@ -3,6 +3,8 @@ from layers import conv2d
 from layers import upsample
 import tensorflow as tf
 
+tanh = tf.nn.tanh
+
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
 img_layer = 3  # 图像通道
@@ -19,7 +21,6 @@ def residual(inputres, dim, name="resnet"):
         _, out_res = conv2d(out_res, dim, 3, 3, 1, 1, 0.02, "VALID", "c1", relufactor=0.2)
         out_res = tf.pad(out_res, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
         _, out_res = conv2d(out_res, dim, 3, 3, 1, 1, 0.02, "VALID", "c2", do_relu=False)
-
         return lrelu(out_res + inputres)
 
 
@@ -44,33 +45,31 @@ def generator(inputgen, name="generator"):
         o_r8 = residual(o_r7, ngf * 8, "r8")
         o_r9 = residual(o_r8, ngf * 8, "r9")
 
-        norm5 = upsample(o_r9, scale=2, name="up5")
+        norm5 = upsample(o_r9, scale=2)
         norm5, _ = conv2d(norm5, ngf * 4, ks, ks, 1, 1, 0.02, "SAME", "c5")
-        o_c5 = tf.concat(axis=3, values=[norm5, norm3], name="o_c5_c3")
+        o_c5 = tf.concat(axis=3, values=[norm5, norm3])
 
-        norm6 = upsample(o_c5, scale=2, name="up6")
+        norm6 = upsample(o_c5, scale=2)
         norm6, _ = conv2d(norm6, ngf * 2, ks, ks, 1, 1, 0.02, "SAME", "c6")
-        o_c6 = tf.concat(axis=3, values=[norm6, norm2], name="o_c6_c2")
+        o_c6 = tf.concat(axis=3, values=[norm6, norm2])
 
-        norm7 = upsample(o_c6, scale=2, name="up7")
+        norm7 = upsample(o_c6, scale=2)
         norm7, _ = conv2d(norm7, ngf * 1, ks, ks, 1, 1, 0.02, "SAME", "c7")
-        o_c7 = tf.concat(axis=3, values=[norm7, norm1], name="o_c7_c1")
+        o_c7 = tf.concat(axis=3, values=[norm7, norm1])
 
         norm8, _ = conv2d(o_c7, img_layer, f, f, 1, 1, 0.02, "SAME", "c8")
-        o_c8_input = tf.concat(axis=3, values=[norm8, inputgen], name="o_c8_input")
-        _, o_c8 = conv2d(o_c8_input, img_layer, f, f, 1, 1, 0.02, "SAME", "o_c8_merge", do_relu=False)
+        o_c8 = tf.concat(axis=3, values=[norm8, inputgen])
+        _, o_c8 = conv2d(o_c8, img_layer, f, f, 1, 1, 0.02, "SAME", "o_c8", do_relu=False)
 
-        return tf.nn.tanh(o_c8)
+        return tanh(o_c8)
 
 
 def discriminator(inputdisc, name="discriminator"):
     with tf.variable_scope(name):
         f = 3
-
         _, o_c1 = conv2d(inputdisc, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)
         _, o_c2 = conv2d(o_c1, ndf * 2, f, f, 2, 2, 0.02, "SAME", "c2", relufactor=0.2)
         _, o_c3 = conv2d(o_c2, ndf * 4, f, f, 2, 2, 0.02, "SAME", "c3", relufactor=0.2)
         _, o_c4 = conv2d(o_c3, ndf * 8, f, f, 1, 1, 0.02, "SAME", "c4", relufactor=0.2)
         _, o_c5 = conv2d(o_c4, 1, f, f, 1, 1, 0.02, "SAME", "c5", do_norm=False, do_relu=False)
-
         return o_c5

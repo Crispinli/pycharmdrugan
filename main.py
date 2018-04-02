@@ -51,8 +51,8 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/monet2photo/trainA"
-root_B = "./input/monet2photo/trainB"
+root_A = "./input/monet2photo/train_A"
+root_B = "./input/monet2photo/train_B"
 test_root_A = "./input/monet2photo/testA"
 test_root_B = "./input/monet2photo/testB"
 
@@ -187,7 +187,7 @@ class DRUGAN():
                    ((img_B[0] + 1) * 127.5).astype(np.uint8))
 
     def fake_image_pool(self, num_fakes, fake, fake_pool):
-        if (num_fakes < pool_size):
+        if num_fakes < pool_size:
             fake_pool[num_fakes] = fake
             return fake
         else:
@@ -201,7 +201,8 @@ class DRUGAN():
                 return fake
 
     def train(self):
-        ''' Training Function '''
+        curr_lr = 2e-4
+        decay_rate = 0.96
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         if not os.path.exists(ckpt_dir):
@@ -229,8 +230,7 @@ class DRUGAN():
             for epoch in range(0, max_epoch):
                 print("In the epoch ", epoch)
                 # 按照条件调整学习率
-                if epoch % 5 == 0:
-                    curr_lr = 2e-4 - (epoch / 5) * 1e-5
+                curr_lr *= decay_rate
                 # 打乱输入 A 与输入 B 的对应顺序
                 random.shuffle(A_input)
                 random.shuffle(B_input)
@@ -323,9 +323,8 @@ class DRUGAN():
                 saver.save(sess, os.path.join(ckpt_dir, "drugan"), global_step=epoch)
 
     def test(self):
-        ''' Testing Function'''
-        A_input = sorted(os.listdir(test_root_A))
-        B_input = sorted(os.listdir(test_root_B))
+        A_input = os.listdir(test_root_A)
+        B_input = os.listdir(test_root_B)
         self.model_setup()
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
