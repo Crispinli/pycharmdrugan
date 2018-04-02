@@ -116,7 +116,7 @@ class DRUGAN():
             gradients_B = tf.gradients(discriminator(interpolates_B, name="d_B"), [interpolates_B])[0]
         slopes_B = tf.sqrt(tf.reduce_sum(tf.square(gradients_B), reduction_indices=[1]))
         gradients_penalty_B = tf.reduce_mean((slopes_B - 1.0) ** 2)
-        disc_loss_B += 5 * gradients_penalty_B
+        disc_loss_B += 10 * gradients_penalty_B
 
         ####################
         # discriminator loss with gradient penalty of d_A
@@ -129,10 +129,10 @@ class DRUGAN():
             gradients_A = tf.gradients(discriminator(interpolates_A, name="d_A"), [interpolates_A])[0]
         slopes_A = tf.sqrt(tf.reduce_sum(tf.square(gradients_A), reduction_indices=[1]))
         gradients_penalty_A = tf.reduce_mean((slopes_A - 1.0) ** 2)
-        disc_loss_A += 5 * gradients_penalty_A
+        disc_loss_A += 10 * gradients_penalty_A
 
-        self.g_loss_A = cyc_loss_A * 100 + cyc_loss_B * 100 + gen_loss_A  # g_A的损失函数
-        self.g_loss_B = cyc_loss_A * 100 + cyc_loss_B * 100 + gen_loss_B  # g_B的损失函数
+        self.g_loss_A = cyc_loss_A * 120 + cyc_loss_B * 100 + gen_loss_A  # g_A的损失函数
+        self.g_loss_B = cyc_loss_A * 120 + cyc_loss_B * 100 + gen_loss_B  # g_B的损失函数
         self.d_loss_A = disc_loss_A  # d_A的损失函数
         self.d_loss_B = disc_loss_B  # d_B的损失函数
 
