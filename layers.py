@@ -43,4 +43,4 @@ def conv2d(inputconv,
 
 def upsample(inputconv, scale=2):
     _, w, h, _ = inputconv.get_shape().as_list()
-    return tf.image.resize_images(inputconv, size=[w * scale, h * scale], method=1)
+    return tf.image.resize_images(inputconv, size=[w * scale, h * scale])
