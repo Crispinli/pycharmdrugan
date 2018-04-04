@@ -51,8 +51,8 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/monet2photo/train_A"
-root_B = "./input/monet2photo/train_B"
+root_A = "./input/monet2photo/trainA"
+root_B = "./input/monet2photo/trainB"
 test_root_A = "./input/monet2photo/testA"
 test_root_B = "./input/monet2photo/testB"
 
@@ -131,8 +131,8 @@ class DRUGAN():
         gradients_penalty_A = tf.reduce_mean((slopes_A - 1.0) ** 2)
         disc_loss_A += 10 * gradients_penalty_A
 
-        self.g_loss_A = cyc_loss_A * 120 + cyc_loss_B * 100 + gen_loss_A  # g_A的损失函数
-        self.g_loss_B = cyc_loss_A * 120 + cyc_loss_B * 100 + gen_loss_B  # g_B的损失函数
+        self.g_loss_A = cyc_loss_A * 12 + cyc_loss_B * 10 + gen_loss_A  # g_A的损失函数
+        self.g_loss_B = cyc_loss_A * 12 + cyc_loss_B * 10 + gen_loss_B  # g_B的损失函数
         self.d_loss_A = disc_loss_A  # d_A的损失函数
         self.d_loss_B = disc_loss_B  # d_B的损失函数
 
