@@ -177,10 +177,10 @@ class DRUGAN():
                    ((fake_A_temp[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/fakeB_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((fake_B_temp[0] + 1) * 127.5).astype(np.uint8))
-            imsave("./output/imgs/cycA_" + str(epoch) + "_" + str(i) + ".jpg",
-                   ((cyc_A_temp[0] + 1) * 127.5).astype(np.uint8))
-            imsave("./output/imgs/cycB_" + str(epoch) + "_" + str(i) + ".jpg",
-                   ((cyc_B_temp[0] + 1) * 127.5).astype(np.uint8))
+            # imsave("./output/imgs/cycA_" + str(epoch) + "_" + str(i) + ".jpg",
+            #        ((cyc_A_temp[0] + 1) * 127.5).astype(np.uint8))
+            # imsave("./output/imgs/cycB_" + str(epoch) + "_" + str(i) + ".jpg",
+            #        ((cyc_B_temp[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/inputA_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((img_A[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/inputB_" + str(epoch) + "_" + str(i) + ".jpg",
