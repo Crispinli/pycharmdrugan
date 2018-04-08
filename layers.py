@@ -36,9 +36,8 @@ def conv2d(inputconv,
             biases_initializer=tf.constant_initializer(0.0)
         )
         if do_norm: conv = norm(conv)
-        relu_conv = conv
-        if do_relu: relu_conv = relu(conv) if relufactor == 0 else lrelu(conv, relufactor)
-        return conv, relu_conv
+        if do_relu: conv = relu(conv) if relufactor == 0 else lrelu(conv, relufactor)
+        return conv
 
 
 def upsample(inputconv, scale=2):
