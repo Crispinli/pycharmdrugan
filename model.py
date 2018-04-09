@@ -1,6 +1,6 @@
 from layers import lrelu
 from layers import conv2d
-from layers import upsample
+from layers import deconv2d
 import tensorflow as tf
 
 tanh = tf.nn.tanh
@@ -17,6 +17,13 @@ ndf = 64
 
 
 def residual(inputres, dim, name="resnet"):
+    '''
+    residual blocks
+    :param inputres: input tensor
+    :param dim: output channels
+    :param name: operation name
+    :return: tnesor
+    '''
     with tf.variable_scope(name):
         out_res = tf.pad(inputres, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
         out_res = conv2d(out_res, dim, 3, 3, 1, 1, 0.02, "VALID", "c1", relufactor=0.2)
@@ -26,6 +33,12 @@ def residual(inputres, dim, name="resnet"):
 
 
 def generator(inputgen, name="generator"):
+    '''
+    build the generator
+    :param inputgen: input tensor
+    :param name: operation name
+    :return: tensor
+    '''
     with tf.variable_scope(name):
         f = 7
         ks = 3
@@ -46,16 +59,13 @@ def generator(inputgen, name="generator"):
         o_r8 = residual(o_r7, ngf * 8, "r8")
         o_r9 = residual(o_r8, ngf * 8, "r9")
 
-        o_c5 = upsample(o_r9, scale=2)
-        o_c5 = conv2d(o_c5, ngf * 4, ks, ks, 1, 1, 0.02, "SAME", "c5")
+        o_c5 = deconv2d(o_r9, ngf * 4, ks, ks, 2, 2, 0.02, "SAME", "c5")
         o_c5 = tf.concat(axis=3, values=[o_c5, o_c3])
 
-        o_c6 = upsample(o_c5, scale=2)
-        o_c6 = conv2d(o_c6, ngf * 2, ks, ks, 1, 1, 0.02, "SAME", "c6")
+        o_c6 = deconv2d(o_c5, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c6")
         o_c6 = tf.concat(axis=3, values=[o_c6, o_c2])
 
-        o_c7 = upsample(o_c6, scale=2)
-        o_c7 = conv2d(o_c7, ngf * 1, ks, ks, 1, 1, 0.02, "SAME", "c7")
+        o_c7 = deconv2d(o_c6, ngf * 1, ks, ks, 2, 2, 0.02, "SAME", "c7")
         o_c7 = tf.concat(axis=3, values=[o_c7, o_c1])
 
         o_c8 = conv2d(o_c7, img_layer, f, f, 1, 1, 0.02, "SAME", "c8")
@@ -66,6 +76,12 @@ def generator(inputgen, name="generator"):
 
 
 def discriminator(inputdisc, name="discriminator"):
+    '''
+    build the discriminator
+    :param inputdisc: tensor
+    :param name: operation name
+    :return: tensor
+    '''
     with tf.variable_scope(name):
         f = 3
         o_c1 = conv2d(inputdisc, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)

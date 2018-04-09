@@ -59,6 +59,10 @@ test_root_B = "./input/monet2photo/testB"
 
 class DRUGAN():
     def model_setup(self):
+        '''
+        build the model
+        :return: None
+        '''
         self.fake_images_A = np.zeros((pool_size, 1, img_height, img_width, img_layer))
         self.fake_images_B = np.zeros((pool_size, 1, img_height, img_width, img_layer))
 
@@ -93,6 +97,10 @@ class DRUGAN():
             self.fake_pool_rec_B = discriminator(self.fake_pool_B, "d_B")
 
     def loss_calc(self):
+        '''
+        build the loss function
+        :return: None
+        '''
         ####################
         # cycle loss
         ####################
@@ -158,6 +166,14 @@ class DRUGAN():
         self.d_B_loss_summ = tf.summary.scalar("d_B_loss", self.d_loss_B)
 
     def save_training_images(self, sess, epoch, A_input, B_input):
+        '''
+        save the training images
+        :param sess: current session
+        :param epoch: the epoch number
+        :param A_input: sample from set A
+        :param B_input: sample from set B
+        :return:
+        '''
         if not os.path.exists("./output/imgs"):
             os.makedirs("./output/imgs")
         for i in range(0, 10):
@@ -177,16 +193,23 @@ class DRUGAN():
                    ((fake_A_temp[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/fakeB_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((fake_B_temp[0] + 1) * 127.5).astype(np.uint8))
-            # imsave("./output/imgs/cycA_" + str(epoch) + "_" + str(i) + ".jpg",
-            #        ((cyc_A_temp[0] + 1) * 127.5).astype(np.uint8))
-            # imsave("./output/imgs/cycB_" + str(epoch) + "_" + str(i) + ".jpg",
-            #        ((cyc_B_temp[0] + 1) * 127.5).astype(np.uint8))
+            imsave("./output/imgs/cycA_" + str(epoch) + "_" + str(i) + ".jpg",
+                   ((cyc_A_temp[0] + 1) * 127.5).astype(np.uint8))
+            imsave("./output/imgs/cycB_" + str(epoch) + "_" + str(i) + ".jpg",
+                   ((cyc_B_temp[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/inputA_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((img_A[0] + 1) * 127.5).astype(np.uint8))
             imsave("./output/imgs/inputB_" + str(epoch) + "_" + str(i) + ".jpg",
                    ((img_B[0] + 1) * 127.5).astype(np.uint8))
 
     def fake_image_pool(self, num_fakes, fake, fake_pool):
+        '''
+        pool of the fake images
+        :param num_fakes: number of images in the pool
+        :param fake: current fake image
+        :param fake_pool: the fake images pool
+        :return: tensor
+        '''
         if num_fakes < pool_size:
             fake_pool[num_fakes] = fake
             return fake
@@ -201,6 +224,10 @@ class DRUGAN():
                 return fake
 
     def train(self):
+        '''
+        train the model
+        :return: None
+        '''
         curr_lr = 2e-4
         decay_rate = 0.97
         if not os.path.exists(log_dir):
@@ -325,6 +352,10 @@ class DRUGAN():
                 saver.save(sess, os.path.join(ckpt_dir, "drugan"), global_step=epoch)
 
     def test(self):
+        '''
+        test the model
+        :return: None
+        '''
         A_input = os.listdir(test_root_A)
         B_input = os.listdir(test_root_B)
         self.model_setup()
