@@ -20,7 +20,7 @@
     （5）模型训练策略：
         a. 最优化算法采用 tf.train.AdamOptimizer 算法
         b. 一次训练会进行 100 个 epoch，每个 epoch 中进行 1000 次迭代
-        c. 初始学习率为 2e-4，每进行 5 个 epoch 的训练，学习率衰减 1e-5
+        c. 初始学习率为 2e-4，每进行 1 个 epoch 的训练，学习率乘以衰减系数 decay_rate
         d. 训练中每个 epoch 都会打乱输入 A 和输入 B 的对应顺序
 '''
 import numpy as np
@@ -201,8 +201,8 @@ class DRUGAN():
                 return fake
 
     def train(self):
-        # curr_lr = 2e-4
-        # decay_rate = 0.96
+        curr_lr = 2e-4
+        decay_rate = 0.97
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         if not os.path.exists(ckpt_dir):
@@ -230,8 +230,9 @@ class DRUGAN():
             for epoch in range(0, max_epoch):
                 print("In the epoch ", epoch)
                 # 按照条件调整学习率
-                if epoch % 5 == 0:
-                    curr_lr = 2e-4 - (epoch / 5) * 1e-5
+                # if epoch % 5 == 0:
+                #     curr_lr = 2e-4 - (epoch / 5) * 1e-5
+                curr_lr = curr_lr * pow(decay_rate, epoch)
                 # 打乱输入 A 与输入 B 的对应顺序
                 random.shuffle(A_input)
                 random.shuffle(B_input)
