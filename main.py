@@ -39,22 +39,21 @@ log_dir = "./output/log"  # 可视化日志路径
 ckpt_dir = "./output/checkpoint"  # 检查点路径
 
 max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
-pool_size = 100  # 用于更新D的假图像的批次数
+pool_size = 50  # 用于更新D的假图像的批次数
 max_epoch = 100  # 每次训练的epoch数目
 n_critic = 3  # 判别器训练的次数
 
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
 img_layer = 3  # 图像通道
-img_size = img_height * img_width  # 图像尺寸
 batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/monet2photo/trainA"
-root_B = "./input/monet2photo/trainB"
-test_root_A = "./input/monet2photo/testA"
-test_root_B = "./input/monet2photo/testB"
+root_A = "./input/summer2winter/trainA"
+root_B = "./input/summer2winter/trainB"
+test_root_A = "./input/summer2winter/testA"
+test_root_B = "./input/summer2winter/testB"
 
 
 class DRUGAN():
@@ -63,8 +62,8 @@ class DRUGAN():
         build the model
         :return: None
         '''
-        self.fake_images_A = np.zeros((pool_size, 1, img_height, img_width, img_layer))
-        self.fake_images_B = np.zeros((pool_size, 1, img_height, img_width, img_layer))
+        self.fake_images_A = np.zeros((pool_size, batch_size, img_height, img_width, img_layer))
+        self.fake_images_B = np.zeros((pool_size, batch_size, img_height, img_width, img_layer))
 
         self.input_A = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_A")
         self.input_B = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_B")
@@ -117,7 +116,7 @@ class DRUGAN():
         # discriminator loss with gradient penalty of d_B
         ####################
         disc_loss_B = tf.reduce_mean(self.fake_pool_rec_B) - tf.reduce_mean(self.rec_B)
-        alpha_B = tf.random_uniform(shape=[batch_size, 1], minval=0.0, maxval=1.0)
+        alpha_B = tf.random_uniform(shape=[batch_size, batch_size], minval=0.0, maxval=1.0)
         interpolates_B = self.input_B + alpha_B * (self.fake_B - self.input_B)
         with tf.variable_scope(self.scope) as scope_B:
             scope_B.reuse_variables()
@@ -139,8 +138,8 @@ class DRUGAN():
         gradients_penalty_A = tf.reduce_mean((slopes_A - 1.0) ** 2)
         disc_loss_A += 10 * gradients_penalty_A
 
-        self.g_loss_A = cyc_loss_A * 12 + cyc_loss_B * 10 + gen_loss_A  # g_A的损失函数
-        self.g_loss_B = cyc_loss_A * 12 + cyc_loss_B * 10 + gen_loss_B  # g_B的损失函数
+        self.g_loss_A = cyc_loss_A * 120 + cyc_loss_B * 120 + gen_loss_A  # g_A的损失函数
+        self.g_loss_B = cyc_loss_A * 120 + cyc_loss_B * 120 + gen_loss_B  # g_B的损失函数
         self.d_loss_A = disc_loss_A  # d_A的损失函数
         self.d_loss_B = disc_loss_B  # d_B的损失函数
 
@@ -180,8 +179,8 @@ class DRUGAN():
             path_A = os.path.join(root_A, A_input[i])
             path_B = os.path.join(root_B, B_input[i])
             try:
-                img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                img_A = np.array(Image.open(path_A)).reshape([batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                img_B = np.array(Image.open(path_B)).reshape([batch_size, img_width, img_height, img_layer]) / 127.5 - 1
             except:
                 print("Can not open this image, skip this iteration...")
                 continue
@@ -235,8 +234,6 @@ class DRUGAN():
         if not os.path.exists(ckpt_dir):
             os.makedirs(ckpt_dir)
         print("Load Dataset from the dataset folder...")
-        A_input = os.listdir(root_A)
-        B_input = os.listdir(root_B)
         print("Build the network...")
         self.model_setup()
         print("Loss function calculations...")
@@ -261,6 +258,8 @@ class DRUGAN():
                 #     curr_lr = 2e-4 - (epoch / 5) * 1e-5
                 curr_lr = curr_lr * pow(decay_rate, epoch)
                 # 打乱输入 A 与输入 B 的对应顺序
+                A_input = os.listdir(root_A)
+                B_input = os.listdir(root_B)
                 random.shuffle(A_input)
                 random.shuffle(B_input)
                 # 保存生成的图像
@@ -274,8 +273,10 @@ class DRUGAN():
                     path_A = os.path.join(root_A, A_input[ptr])
                     path_B = os.path.join(root_B, B_input[ptr])
                     try:
-                        img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                        img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                        img_A = np.array(Image.open(path_A)).reshape(
+                            [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                        img_B = np.array(Image.open(path_B)).reshape(
+                            [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                     except:
                         print("Can not open this image, skip this iteration...")
                         continue
@@ -287,8 +288,10 @@ class DRUGAN():
                         path_A_D = os.path.join(root_A, A_input[iter])
                         path_B_D = os.path.join(root_B, B_input[iter])
                         try:
-                            img_A_D = np.array(Image.open(path_A_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                            img_B_D = np.array(Image.open(path_B_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_A_D = np.array(Image.open(path_A_D)).reshape(
+                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                            img_B_D = np.array(Image.open(path_B_D)).reshape(
+                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                         except:
                             print("Can not open this image, skip this iteration...")
                             continue
@@ -320,8 +323,10 @@ class DRUGAN():
                         path_A_D = os.path.join(root_A, A_input[iter])
                         path_B_D = os.path.join(root_B, B_input[iter])
                         try:
-                            img_A_D = np.array(Image.open(path_A_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                            img_B_D = np.array(Image.open(path_B_D)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                            img_A_D = np.array(Image.open(path_A_D)).reshape(
+                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                            img_B_D = np.array(Image.open(path_B_D)).reshape(
+                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                         except:
                             print("Can not open this image, skip this iteration...")
                             continue
@@ -374,8 +379,10 @@ class DRUGAN():
                 path_A = os.path.join(test_root_A, A_input[i])
                 path_B = os.path.join(test_root_B, B_input[i])
                 try:
-                    img_A = np.array(Image.open(path_A)).reshape([1, 256, 256, 3]) / 127.5 - 1
-                    img_B = np.array(Image.open(path_B)).reshape([1, 256, 256, 3]) / 127.5 - 1
+                    img_A = np.array(Image.open(path_A)).reshape(
+                        [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                    img_B = np.array(Image.open(path_B)).reshape(
+                        [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                 except:
                     print("Can not open this image, skip this iteration...")
                     continue
