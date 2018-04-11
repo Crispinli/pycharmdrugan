@@ -39,22 +39,24 @@ def generator(inputgen, name="generator"):
         f = 7
         ks = 3
 
+        #####################
+        # down sample
+        #####################
         pad_input = tf.pad(inputgen, [[0, 0], [ks, ks], [ks, ks], [0, 0]], "REFLECT")
         o_c1 = conv2d(pad_input, ngf, f, f, 1, 1, 0.02, name="c1", relufactor=0.2)
+
         o_c2 = conv2d(o_c1, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c2", relufactor=0.2)
+
         o_c3 = conv2d(o_c2, ngf * 4, ks, ks, 2, 2, 0.02, "SAME", "c3", relufactor=0.2)
+
+        #####################
+        # bottom
+        #####################
         o_c4 = conv2d(o_c3, ngf * 8, ks, ks, 2, 2, 0.02, "SAME", "c4", relufactor=0.2)
 
-        # o_r1 = residual(o_c4, ngf * 8, "r1")
-        # o_r2 = residual(o_r1, ngf * 8, "r2")
-        # o_r3 = residual(o_r2, ngf * 8, "r3")
-        # o_r4 = residual(o_r3, ngf * 8, "r4")
-        # o_r5 = residual(o_r4, ngf * 8, "r5")
-        # o_r6 = residual(o_r5, ngf * 8, "r6")
-        # o_r7 = residual(o_r6, ngf * 8, "r7")
-        # o_r8 = residual(o_r7, ngf * 8, "r8")
-        # o_r9 = residual(o_r8, ngf * 8, "r9")
-
+        #####################
+        # up sample
+        #####################
         o_c5 = deconv2d(o_c4, ngf * 4, ks, ks, 2, 2, 0.02, "SAME", "c5")
         o_c5 = tf.concat(axis=3, values=[o_c5, o_c3])
 
@@ -64,9 +66,11 @@ def generator(inputgen, name="generator"):
         o_c7 = deconv2d(o_c6, ngf * 1, ks, ks, 2, 2, 0.02, "SAME", "c7")
         o_c7 = tf.concat(axis=3, values=[o_c7, o_c1])
 
-        o_c8 = conv2d(o_c7, img_layer, f, f, 1, 1, 0.02, "SAME", "c8")
+        o_c8_input = tf.pad(o_c7, [[0, 0], [ks, ks], [ks, ks], [0, 0]], "REFLECT")
+        o_c8 = conv2d(o_c8_input, img_layer, f, f, 1, 1, 0.02, name="c8")
         o_c8 = tf.concat(axis=3, values=[o_c8, inputgen])
-        o_c8 = conv2d(o_c8, img_layer, f, f, 1, 1, 0.02, "SAME", "o_c8", do_relu=False)
+
+        o_c8 = conv2d(o_c8, img_layer, ks, ks, 1, 1, 0.02, "SAME", "o_c8", do_relu=False)
 
         return tanh(o_c8)
 
@@ -80,7 +84,10 @@ def discriminator(inputdisc, name="discriminator"):
     '''
     with tf.variable_scope(name):
         f = 3
-        o_c1 = conv2d(inputdisc, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)
+        patch_input = tf.random_crop(inputdisc, [1, 70, 70, 3])
+        for i in range(15):
+            tf.concat(axis=0, values=[patch_input, tf.random_crop(inputdisc, [1, 70, 70, 3])])
+        o_c1 = conv2d(patch_input, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)
         o_c2 = conv2d(o_c1, ndf * 2, f, f, 2, 2, 0.02, "SAME", "c2", relufactor=0.2)
         o_c3 = conv2d(o_c2, ndf * 4, f, f, 2, 2, 0.02, "SAME", "c3", relufactor=0.2)
         o_c4 = conv2d(o_c3, ndf * 8, f, f, 1, 1, 0.02, "SAME", "c4", relufactor=0.2)
