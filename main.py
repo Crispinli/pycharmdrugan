@@ -49,10 +49,10 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/summer2winter/trainA"
-root_B = "./input/summer2winter/trainB"
-test_root_A = "./input/summer2winter/testA"
-test_root_B = "./input/summer2winter/testB"
+root_A = "./input/horse2zebra/trainA"
+root_B = "./input/horse2zebra/trainB"
+test_root_A = "./input/horse2zebra/trainA"
+test_root_B = "./input/horse2zebra/trainB"
 
 
 class DRUGAN():
@@ -255,7 +255,8 @@ class DRUGAN():
                 # 按照条件调整学习率
                 # if epoch % 5 == 0:
                 #     curr_lr = 2e-4 - (epoch / 5) * 1e-5
-                curr_lr = curr_lr * pow(decay_rate, epoch)
+                if epoch >= 30:
+                    curr_lr = curr_lr * pow(decay_rate, (epoch - 30))
                 # 打乱输入 A 与输入 B 的对应顺序
                 A_input = os.listdir(root_A)
                 B_input = os.listdir(root_B)
