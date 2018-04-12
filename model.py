@@ -5,6 +5,8 @@ import tensorflow as tf
 
 tanh = tf.nn.tanh
 relu = tf.nn.relu
+dropout = tf.nn.dropout
+random_normal = tf.random_normal
 
 img_layer = 3  # 图像通道
 
@@ -53,6 +55,8 @@ def generator(inputgen, name="generator"):
         # bottom
         #####################
         o_c4 = conv2d(o_c3, ngf * 8, ks, ks, 2, 2, 0.02, "SAME", "c4", relufactor=0.2)
+        noise = dropout(random_normal(shape=tf.shape(o_c4)), keep_prob=0.5)
+        o_c4 = o_c4 + noise
 
         #####################
         # up sample
