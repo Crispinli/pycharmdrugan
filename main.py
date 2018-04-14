@@ -4,14 +4,15 @@
         a. 整体结构类似 CycleGAN 模型，并且进行了改进
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
-        d. 对每个 GAN 的判别器进行 1 次优化，然后对生成器进行 1 次优化
+        d. 对每个 GAN 的判别器进行 3 次优化，然后对生成器进行 1 次优化
     （2）生成器 generator 的结构：
         a. 整体结构类似 U-Net 模型的形式，并且进行了改进
         b. 在 encoder 部分，编码结果直接与 decoder 部分的对应结果进行拼接
+        c. 在 bottom 部分以 dropout 的形式添加噪声向量
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
         b. 输出是一个经过编码操作的 tensor
-        c. 输入是图像 patch 的形式，尺寸为 [16, 70, 70, 3]
+        c. 输入是图像 patch 的形式，尺寸为 [6, 70, 70, 3]
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进
@@ -19,7 +20,7 @@
     （5）模型训练策略：
         a. 最优化算法采用 tf.train.AdamOptimizer 算法
         b. 一次训练会进行 100 个 epoch，每个 epoch 中进行 1000 次迭代
-        c. 初始学习率为 2e-4，超过 30 个 epoch 后，每进行 1 个 epoch 的训练，学习率乘以衰减系数 decay_rate
+        c. 初始学习率为 2e-4，每进行 1 个 epoch 的训练，学习率衰减 2e-6
         d. 训练中每个 epoch 都会打乱输入 A 和输入 B 的对应顺序
 '''
 import numpy as np
@@ -40,7 +41,7 @@ ckpt_dir = "./output/checkpoint"  # 检查点路径
 max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 50  # 用于更新D的假图像的批次数
 max_epoch = 100  # 每次训练的epoch数目
-n_critic = 1  # 判别器训练的次数
+n_critic = 3  # 判别器训练的次数
 
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
@@ -51,8 +52,8 @@ save_training_images = True  # 是否存储训练数据
 
 root_A = "./input/horse2zebra/trainA"
 root_B = "./input/horse2zebra/trainB"
-test_root_A = "./input/horse2zebra/trainA"
-test_root_B = "./input/horse2zebra/trainB"
+test_root_A = "./input/horse2zebra/testA"
+test_root_B = "./input/horse2zebra/testB"
 
 
 class DRUGAN():
@@ -181,6 +182,8 @@ class DRUGAN():
                 img_A = np.array(Image.open(path_A)).reshape([batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                 img_B = np.array(Image.open(path_B)).reshape([batch_size, img_width, img_height, img_layer]) / 127.5 - 1
             except:
+                print(path_A)
+                print(path_B)
                 print("Can not open this image, skip this iteration...")
                 continue
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run(
@@ -226,17 +229,17 @@ class DRUGAN():
         train the model
         :return: None
         '''
-        curr_lr = 2e-4
-        decay_rate = 0.97
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         if not os.path.exists(ckpt_dir):
             os.makedirs(ckpt_dir)
-        print("Load Dataset from the dataset folder...")
         print("Build the network...")
         self.model_setup()
         print("Loss function calculations...")
         self.loss_calc()
+        print("Load training data from the dataset folder...")
+        A_input = os.listdir(root_A)
+        B_input = os.listdir(root_B)
         saver = tf.train.Saver()
         with tf.Session() as sess:
             print("The log writer...")
@@ -253,11 +256,8 @@ class DRUGAN():
             for epoch in range(0, max_epoch):
                 print("In the epoch ", epoch)
                 # 按照条件调整学习率
-                if epoch >= 30:
-                    curr_lr = curr_lr * pow(decay_rate, (epoch - 30))
+                curr_lr = 2e-4 - epoch * 2e-6
                 # 打乱输入 A 与输入 B 的对应顺序
-                A_input = os.listdir(root_A)
-                B_input = os.listdir(root_B)
                 random.shuffle(A_input)
                 random.shuffle(B_input)
                 # 保存生成的图像
@@ -266,7 +266,6 @@ class DRUGAN():
                     self.save_training_images(sess, epoch, A_input, B_input)
                 for ptr in range(0, max_images):
                     print("In the iteration ", ptr)
-
                     # 获取训练数据
                     path_A = os.path.join(root_A, A_input[ptr])
                     path_B = os.path.join(root_B, B_input[ptr])
@@ -276,6 +275,8 @@ class DRUGAN():
                         img_B = np.array(Image.open(path_B)).reshape(
                             [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                     except:
+                        print(path_A)
+                        print(path_B)
                         print("Can not open this image, skip this iteration...")
                         continue
 
@@ -291,6 +292,8 @@ class DRUGAN():
                             img_B_D = np.array(Image.open(path_B_D)).reshape(
                                 [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                         except:
+                            print(path_A_D)
+                            print(path_B_D)
                             print("Can not open this image, skip this iteration...")
                             continue
                         fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A_D})
@@ -326,6 +329,8 @@ class DRUGAN():
                             img_B_D = np.array(Image.open(path_B_D)).reshape(
                                 [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                         except:
+                            print(path_A_D)
+                            print(path_B_D)
                             print("Can not open this image, skip this iteration...")
                             continue
                         fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B_D})
@@ -359,9 +364,10 @@ class DRUGAN():
         test the model
         :return: None
         '''
+        self.model_setup()
+        print("Load test data from the dataset folder...")
         A_input = os.listdir(test_root_A)
         B_input = os.listdir(test_root_B)
-        self.model_setup()
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
         with tf.Session() as sess:
@@ -373,7 +379,7 @@ class DRUGAN():
                 os.makedirs("./output/test/")
             print("Testing loop...")
             for i in range(0, min(len(A_input), len(B_input))):
-                # 获取测试数据
+                print("In the iteration ", i)
                 path_A = os.path.join(test_root_A, A_input[i])
                 path_B = os.path.join(test_root_B, B_input[i])
                 try:
@@ -382,10 +388,11 @@ class DRUGAN():
                     img_B = np.array(Image.open(path_B)).reshape(
                         [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
                 except:
+                    print(path_A)
+                    print(path_B)
                     print("Can not open this image, skip this iteration...")
                     continue
 
-                print("In the iteration ", i)
                 fake_A_temp, fake_B_temp = sess.run(
                     [self.fake_A, self.fake_B],
                     feed_dict={
