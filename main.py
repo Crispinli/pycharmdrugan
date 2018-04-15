@@ -8,11 +8,10 @@
     （2）生成器 generator 的结构：
         a. 整体结构类似 U-Net 模型的形式，并且进行了改进
         b. 在 encoder 部分，编码结果直接与 decoder 部分的对应结果进行拼接
-        c. 在 bottom 部分以 dropout 的形式添加噪声向量
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
         b. 输出是一个经过编码操作的 tensor
-        c. 输入是图像 patch 的形式，尺寸为 [6, 70, 70, 3]
+        c. 输入是图像 patch 的形式，尺寸为 [24, 64, 64, 3]
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进
@@ -31,6 +30,7 @@ from model import discriminator
 from model import generator
 import tensorflow as tf
 import os
+import sys
 
 to_train = True  # 是否训练
 to_test = True  # 是否测试
@@ -184,7 +184,7 @@ class DRUGAN():
             except:
                 print(path_A)
                 print(path_B)
-                print("Can not open this image, skip this iteration...")
+                print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                 continue
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run(
                 [self.fake_A, self.fake_B, self.cyc_A, self.cyc_B],
@@ -229,10 +229,8 @@ class DRUGAN():
         train the model
         :return: None
         '''
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        if not os.path.exists(ckpt_dir):
-            os.makedirs(ckpt_dir)
+        if not os.path.exists(log_dir): os.makedirs(log_dir)
+        if not os.path.exists(ckpt_dir): os.makedirs(ckpt_dir)
         print("Build the network...")
         self.model_setup()
         print("Loss function calculations...")
@@ -266,7 +264,6 @@ class DRUGAN():
                     self.save_training_images(sess, epoch, A_input, B_input)
                 for ptr in range(0, max_images):
                     print("In the iteration ", ptr)
-                    # 获取训练数据
                     path_A = os.path.join(root_A, A_input[ptr])
                     path_B = os.path.join(root_B, B_input[ptr])
                     try:
@@ -277,37 +274,22 @@ class DRUGAN():
                     except:
                         print(path_A)
                         print(path_B)
-                        print("Can not open this image, skip this iteration...")
+                        print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                         continue
-
                     summary_str = None
                     # Optimizing the D_B network
                     for i in range(n_critic):
-                        iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
-                        path_A_D = os.path.join(root_A, A_input[iter])
-                        path_B_D = os.path.join(root_B, B_input[iter])
-                        try:
-                            img_A_D = np.array(Image.open(path_A_D)).reshape(
-                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
-                            img_B_D = np.array(Image.open(path_B_D)).reshape(
-                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
-                        except:
-                            print(path_A_D)
-                            print(path_B_D)
-                            print("Can not open this image, skip this iteration...")
-                            continue
-                        fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A_D})
+                        fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A})
                         fake_B_temp = self.fake_image_pool(self.num_fake_inputs, fake_B, self.fake_images_B)
                         _, summary_str = sess.run(
                             [self.d_B_trainer, self.d_B_loss_summ],
                             feed_dict={
-                                self.input_A: img_A_D,
-                                self.input_B: img_B_D,
+                                self.input_A: img_A,
+                                self.input_B: img_B,
                                 self.lr: curr_lr,
                                 self.fake_pool_B: fake_B_temp}
                         )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
-
                     # Optimizing the G_A network
                     _, summary_str = sess.run(
                         [self.g_A_trainer, self.g_A_loss_summ],
@@ -317,34 +299,19 @@ class DRUGAN():
                             self.lr: curr_lr}
                     )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
-
                     # Optimizing the D_A network
                     for i in range(n_critic):
-                        iter = (ptr + i) if (ptr + i) < max_images else (ptr + i) - max_images
-                        path_A_D = os.path.join(root_A, A_input[iter])
-                        path_B_D = os.path.join(root_B, B_input[iter])
-                        try:
-                            img_A_D = np.array(Image.open(path_A_D)).reshape(
-                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
-                            img_B_D = np.array(Image.open(path_B_D)).reshape(
-                                [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
-                        except:
-                            print(path_A_D)
-                            print(path_B_D)
-                            print("Can not open this image, skip this iteration...")
-                            continue
-                        fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B_D})
+                        fake_A = sess.run(self.fake_A, feed_dict={self.input_B: img_B})
                         fake_A_temp = self.fake_image_pool(self.num_fake_inputs, fake_A, self.fake_images_A)
                         _, summary_str = sess.run(
                             [self.d_A_trainer, self.d_A_loss_summ],
                             feed_dict={
-                                self.input_A: img_A_D,
-                                self.input_B: img_B_D,
+                                self.input_A: img_A,
+                                self.input_B: img_B,
                                 self.lr: curr_lr,
                                 self.fake_pool_A: fake_A_temp}
                         )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
-
                     # Optimizing the G_B network
                     _, summary_str = sess.run(
                         [self.g_B_trainer, self.g_B_loss_summ],
@@ -390,9 +357,8 @@ class DRUGAN():
                 except:
                     print(path_A)
                     print(path_B)
-                    print("Can not open this image, skip this iteration...")
+                    print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                     continue
-
                 fake_A_temp, fake_B_temp = sess.run(
                     [self.fake_A, self.fake_B],
                     feed_dict={
