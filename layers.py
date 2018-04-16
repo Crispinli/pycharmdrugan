@@ -22,7 +22,7 @@ def lrelu(x, leak=0.2):
 #     '''
 #     return tf.contrib.layers.layer_norm(x)
 
-def norm(x, G=32, eps=1e-5) :
+def norm(x, G=64, eps=1e-5) :
     '''
     Group Normalization
     :param x: input tensor
@@ -75,8 +75,8 @@ def conv2d(inputconv,
         conv = tf.contrib.layers.conv2d(
             inputconv,
             o_d,
-            f_w,
-            s_w,
+            [f_w, f_h],
+            [s_w, s_h],
             padding,
             activation_fn=None,
             weights_initializer=tf.truncated_normal_initializer(stddev=stddev),

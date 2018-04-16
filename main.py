@@ -11,7 +11,7 @@
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
         b. 输出是一个经过编码操作的 tensor
-        c. 输入是图像 patch 的形式，尺寸为 [8, 64, 64, 3]
+        c. 输入是图像 patch 的形式，尺寸为 [4, 64, 64, 3]
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进
@@ -42,7 +42,7 @@ ckpt_dir = "./output/checkpoint"  # 检查点路径
 max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 50  # 用于更新D的假图像的批次数
 max_epoch = 100  # 每次训练的epoch数目
-n_critic = 3  # 判别器训练的次数
+n_critic = 1  # 判别器训练的次数
 
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度

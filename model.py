@@ -11,7 +11,7 @@ img_layer = 3  # 图像通道
 ngf = 32
 ndf = 64
 
-disc_batch_size = 7
+disc_batch_size = 3
 
 
 def discriminator(inputdisc, name="discriminator"):
