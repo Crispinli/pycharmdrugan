@@ -11,7 +11,7 @@
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
         b. 输出是一个经过编码操作的 tensor
-        c. 输入是图像 patch 的形式，尺寸为 [24, 64, 64, 3]
+        c. 输入是图像 patch 的形式，尺寸为 [8, 64, 64, 3]
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进
@@ -21,6 +21,7 @@
         b. 一次训练会进行 100 个 epoch，每个 epoch 中进行 1000 次迭代
         c. 初始学习率为 2e-4，每进行 1 个 epoch 的训练，学习率衰减 2e-6
         d. 训练中每个 epoch 都会打乱输入 A 和输入 B 的对应顺序
+        e. 采用 Group Normalization 进行标准化
 '''
 import numpy as np
 from scipy.misc import imsave

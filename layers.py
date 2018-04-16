@@ -14,13 +14,32 @@ def lrelu(x, leak=0.2):
     return (0.5 * (1 + leak)) * x + (0.5 * (1 - leak)) * tf.abs(x)
 
 
-def norm(x):
+# def norm(x):
+#     '''
+#     layer normalization
+#     :param x: input tensor
+#     :return: layer normalized tensor
+#     '''
+#     return tf.contrib.layers.layer_norm(x)
+
+def norm(x, G=32, eps=1e-5) :
     '''
-    layer normalization
+    Group Normalization
     :param x: input tensor
-    :return: layer normalized tensor
+    :param G: the number of group
+    :param eps: a small float number to avoid dividing by 0
+    :return: normalized tensor
     '''
-    return tf.contrib.layers.layer_norm(x)
+    with tf.variable_scope("GroupNorm") :
+        N, H, W, C = x.get_shape().as_list()
+        G = min(G, C)
+        x = tf.reshape(x, [N, H, W, G, C // G])
+        mean, var = tf.nn.moments(x, [1, 2, 4], keep_dims=True)
+        x = (x - mean) / tf.sqrt(var + eps)
+        gamma = tf.get_variable('gamma', [1, 1, 1, C], initializer=tf.constant_initializer(1.0))
+        beta = tf.get_variable('beta', [1, 1, 1, C], initializer=tf.constant_initializer(0.0))
+        x = tf.reshape(x, [N, H, W, C]) * gamma + beta
+        return x
 
 
 def conv2d(inputconv,
