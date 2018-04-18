@@ -117,7 +117,7 @@ class DRUGAN():
         # discriminator loss with gradient penalty of d_B
         ####################
         disc_loss_B = tf.reduce_mean(self.fake_pool_rec_B) - tf.reduce_mean(self.rec_B)
-        alpha_B = tf.random_uniform(shape=[batch_size, 1], minval=0.0, maxval=1.0)
+        alpha_B = tf.random_uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
         interpolates_B = self.input_B + alpha_B * (self.fake_B - self.input_B)
         with tf.variable_scope(self.scope) as scope_B:
             scope_B.reuse_variables()
@@ -130,7 +130,7 @@ class DRUGAN():
         # discriminator loss with gradient penalty of d_A
         ####################
         disc_loss_A = tf.reduce_mean(self.fake_pool_rec_A) - tf.reduce_mean(self.rec_A)
-        alpha_A = tf.random_uniform(shape=[batch_size, 1], minval=0.0, maxval=1.0)
+        alpha_A = tf.random_uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
         interpolates_A = self.input_A + alpha_A * (self.fake_A - self.input_A)
         with tf.variable_scope(self.scope) as scope_A:
             scope_A.reuse_variables()
