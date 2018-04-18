@@ -4,7 +4,7 @@
         a. 整体结构类似 CycleGAN 模型，并且进行了改进
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
-        d. 对每个 GAN 的判别器进行 3 次优化，然后对生成器进行 1 次优化
+        d. 对每个 GAN 的生成器进行 1 次优化，然后堆判别器进行 1 次优化
     （2）生成器 generator 的结构：
         a. 整体结构类似 U-Net 模型的形式，并且进行了改进
         b. 在 encoder 部分，编码结果直接与 decoder 部分的对应结果进行拼接
@@ -277,7 +277,15 @@ class DRUGAN():
                         print(path_B)
                         print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                         continue
-                    summary_str = None
+                    # Optimizing the G_A network
+                    _, summary_str = sess.run(
+                        [self.g_A_trainer, self.g_A_loss_summ],
+                        feed_dict={
+                            self.input_A: img_A,
+                            self.input_B: img_B,
+                            self.lr: curr_lr}
+                    )
+                    writer.add_summary(summary_str, epoch * max_images + ptr)
                     # Optimizing the D_B network
                     for i in range(n_critic):
                         fake_B = sess.run(self.fake_B, feed_dict={self.input_A: img_A})
@@ -291,9 +299,9 @@ class DRUGAN():
                                 self.fake_pool_B: fake_B_temp}
                         )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
-                    # Optimizing the G_A network
+                    # Optimizing the G_B network
                     _, summary_str = sess.run(
-                        [self.g_A_trainer, self.g_A_loss_summ],
+                        [self.g_B_trainer, self.g_B_loss_summ],
                         feed_dict={
                             self.input_A: img_A,
                             self.input_B: img_B,
@@ -312,15 +320,6 @@ class DRUGAN():
                                 self.lr: curr_lr,
                                 self.fake_pool_A: fake_A_temp}
                         )
-                    writer.add_summary(summary_str, epoch * max_images + ptr)
-                    # Optimizing the G_B network
-                    _, summary_str = sess.run(
-                        [self.g_B_trainer, self.g_B_loss_summ],
-                        feed_dict={
-                            self.input_A: img_A,
-                            self.input_B: img_B,
-                            self.lr: curr_lr}
-                    )
                     writer.add_summary(summary_str, epoch * max_images + ptr)
 
                     self.num_fake_inputs += 1
