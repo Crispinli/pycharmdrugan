@@ -22,7 +22,7 @@ def lrelu(x, leak=0.2):
 #     '''
 #     return tf.contrib.layers.layer_norm(x)
 
-def norm(x, G=64, eps=1e-5) :
+def norm(x, G=64, eps=1e-5):
     '''
     Group Normalization
     :param x: input tensor
@@ -30,13 +30,14 @@ def norm(x, G=64, eps=1e-5) :
     :param eps: a small float number to avoid dividing by 0
     :return: normalized tensor
     '''
-    with tf.variable_scope("GroupNorm") :
+    with tf.variable_scope("GroupNorm"):
         N, H, W, C = x.get_shape().as_list()
         G = min(G, C)
         x = tf.reshape(x, [N, H, W, G, C // G])
         mean, var = tf.nn.moments(x, [1, 2, 4], keep_dims=True)
         x = (x - mean) / tf.sqrt(var + eps)
-        gamma = tf.get_variable('gamma', [1, 1, 1, C], initializer=tf.constant_initializer(1.0))
+        gamma = tf.get_variable('gamma', [1, 1, 1, C],
+                                initializer=tf.truncated_normal_initializer(mean=1.0, stddev=0.02))
         beta = tf.get_variable('beta', [1, 1, 1, C], initializer=tf.constant_initializer(0.0))
         x = tf.reshape(x, [N, H, W, C]) * gamma + beta
         return x
@@ -79,7 +80,7 @@ def conv2d(inputconv,
             [s_w, s_h],
             padding,
             activation_fn=None,
-            weights_initializer=tf.truncated_normal_initializer(stddev=stddev),
+            weights_initializer=tf.contrib.layers.xavier_initializer(),
             biases_initializer=tf.constant_initializer(0.0)
         )
         if do_norm: conv = norm(conv)
@@ -124,7 +125,7 @@ def deconv2d(inputconv,
             [s_h, s_w],
             padding,
             activation_fn=None,
-            weights_initializer=tf.truncated_normal_initializer(stddev=stddev),
+            weights_initializer=tf.contrib.layers.xavier_initializer(),
             biases_initializer=tf.constant_initializer(0.0)
         )
         if do_norm: conv = norm(conv)

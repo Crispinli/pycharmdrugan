@@ -5,8 +5,9 @@
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
         d. 对每个 GAN 的生成器进行 1 次优化，然后堆判别器进行 1 次优化
+        e. 模型参数使用 xavier initializer 进行初始化
     （2）生成器 generator 的结构：
-        a. 整体结构类似 U-Net 模型的形式，并且进行了改进
+        a. 整体结构类似 U-Net 模型的形式
         b. 在 encoder 部分，编码结果直接与 decoder 部分的对应结果进行拼接
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
