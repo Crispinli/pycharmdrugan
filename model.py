@@ -59,8 +59,6 @@ def generator(inputgen, name="generator"):
         # bottom
         #####################
         o_c4 = conv2d(o_c3, ngf * 8, ks, ks, 2, 2, 0.02, "SAME", "c4", relufactor=0.2)
-        # noise = random_normal(shape=tf.shape(o_c4))
-        # o_c4 = tf.concat(axis=3, values=[o_c4, noise])
 
         #####################
         # up sample

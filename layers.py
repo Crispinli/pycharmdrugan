@@ -14,14 +14,6 @@ def lrelu(x, leak=0.2):
     return (0.5 * (1 + leak)) * x + (0.5 * (1 - leak)) * tf.abs(x)
 
 
-# def norm(x):
-#     '''
-#     layer normalization
-#     :param x: input tensor
-#     :return: layer normalized tensor
-#     '''
-#     return tf.contrib.layers.layer_norm(x)
-
 def norm(x, G=64, eps=1e-5):
     '''
     Group Normalization
