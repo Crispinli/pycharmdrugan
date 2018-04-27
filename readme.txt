@@ -1,20 +1,17 @@
 算法描述：
     （1）模型整体结构：
-        a. 整体结构类似 CycleGAN 模型，并且进行了改进
+        a. 整体结构类似 CycleGAN/DualGAN/DiscoGAN 模型，并且进行了改进
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
-        d. 对每个 GAN 的生成器进行 1 次优化，然后堆判别器进行 1 次优化
+        d. 对每个 GAN 的生成器进行 1 次优化，然后对判别器进行 1 次优化
         e. 模型参数使用 xavier initializer 进行初始化
     （2）生成器 generator 的结构：
         a. 整体结构类似 U-Net 模型的形式
         b. 在 encoder 部分，编码结果直接与 decoder 部分的对应结果进行拼接
-        c. 在 bottom 部分以 dropout 的形式添加高斯噪声，保留比例为 0.5
-        d. 最后一层使用 tanh 函数，其余全部使用 leaky ReLU 函数
     （3）判别器 discriminator 结构：
         a. 整体结构为全卷积网络 FCN 的形式
-        b. 输出是一个经过编码操作的 tensor
+        b. 输出是一个经过编码操作的 tensor，尺寸为 [4, 8, 8, 1]
         c. 输入是图像 patch 的形式，尺寸为 [4, 64, 64, 3]
-        d. 全部利用 leaky ReLU 函数
     （4）模型的损失函数：
         a. 两个 GAN 的损失函数具有相同的形式
         b. 损失函数类似 WGAN_GP 的形式，并且进行了改进

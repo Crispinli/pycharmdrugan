@@ -60,23 +60,21 @@ def generator(inputgen, name="generator"):
         # bottom
         #####################
         o_c4 = conv2d(o_c3, ngf * 8, ks, ks, 2, 2, 0.02, "SAME", "c4", relufactor=0.2)
-        noise = random_normal(shape=tf.shape(o_c4))
-        o_c4 += dropout(noise, keep_prob=0.5)
 
         #####################
         # up sample
         #####################
-        o_c5 = deconv2d(o_c4, ngf * 4, ks, ks, 2, 2, 0.02, "SAME", "c5", relufactor=0.2)
+        o_c5 = deconv2d(o_c4, ngf * 4, ks, ks, 2, 2, 0.02, "SAME", "c5")
         o_c5 = tf.concat(axis=3, values=[o_c5, o_c3])
 
-        o_c6 = deconv2d(o_c5, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c6", relufactor=0.2)
+        o_c6 = deconv2d(o_c5, ngf * 2, ks, ks, 2, 2, 0.02, "SAME", "c6")
         o_c6 = tf.concat(axis=3, values=[o_c6, o_c2])
 
-        o_c7 = deconv2d(o_c6, ngf * 1, ks, ks, 2, 2, 0.02, "SAME", "c7", relufactor=0.2)
+        o_c7 = deconv2d(o_c6, ngf * 1, ks, ks, 2, 2, 0.02, "SAME", "c7")
         o_c7 = tf.concat(axis=3, values=[o_c7, o_c1])
 
         o_c8_input = tf.pad(o_c7, [[0, 0], [ks, ks], [ks, ks], [0, 0]], "REFLECT")
-        o_c8 = conv2d(o_c8_input, img_layer, f, f, 1, 1, 0.02, name="c8", relufactor=0.2)
+        o_c8 = conv2d(o_c8_input, img_layer, f, f, 1, 1, 0.02, name="c8")
         o_c8 = tf.concat(axis=3, values=[o_c8, inputgen])
         o_c8 = conv2d(o_c8, img_layer, ks, ks, 1, 1, 0.02, "SAME", "o_c8", do_relu=False)
 
