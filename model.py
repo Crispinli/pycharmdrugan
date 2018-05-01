@@ -24,10 +24,10 @@ def discriminator(inputdisc, name="discriminator"):
     '''
     with tf.variable_scope(name):
         f = 3
-        patch_input = tf.random_crop(inputdisc, [1, 64, 64, 3])
-        for _ in range(disc_batch_size):
-            patch_input = tf.concat(axis=0, values=[patch_input, tf.random_crop(inputdisc, [1, 64, 64, 3])])
-        o_c1 = conv2d(patch_input, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)
+        # patch_input = tf.random_crop(inputdisc, [1, 64, 64, 3])
+        # for _ in range(disc_batch_size):
+        #     patch_input = tf.concat(axis=0, values=[patch_input, tf.random_crop(inputdisc, [1, 64, 64, 3])])
+        o_c1 = conv2d(inputdisc, ndf, f, f, 2, 2, 0.02, "SAME", "c1", do_norm=False, relufactor=0.2)
         o_c2 = conv2d(o_c1, ndf * 2, f, f, 2, 2, 0.02, "SAME", "c2", relufactor=0.2)
         o_c3 = conv2d(o_c2, ndf * 4, f, f, 2, 2, 0.02, "SAME", "c3", relufactor=0.2)
         o_c4 = conv2d(o_c3, ndf * 8, f, f, 1, 1, 0.02, "SAME", "c4", relufactor=0.2)

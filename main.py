@@ -44,8 +44,8 @@ class DRUGAN():
         self.input_A = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_A")
         self.input_B = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_B")
 
-        self.fake_pool_A = tf.placeholder(tf.float32, [None, img_width, img_height, img_layer], name="fake_pool_A")
-        self.fake_pool_B = tf.placeholder(tf.float32, [None, img_width, img_height, img_layer], name="fake_pool_B")
+        self.fake_pool_A = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="fake_pool_A")
+        self.fake_pool_B = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="fake_pool_B")
 
         self.num_fake_inputs = 0
 
