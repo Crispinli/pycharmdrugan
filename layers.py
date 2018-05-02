@@ -41,7 +41,6 @@ def conv2d(inputconv,
            f_w=7,
            s_h=1,
            s_w=1,
-           stddev=0.02,
            padding="VALID",
            name="conv2d",
            do_norm=True,
@@ -56,7 +55,6 @@ def conv2d(inputconv,
     :param f_w: width of filter
     :param s_h: height of strides
     :param s_w: width of strides
-    :param stddev: standard deviation of parameters
     :param padding: method of padding
     :param name: operation name
     :param do_norm: whether normalize
@@ -86,7 +84,6 @@ def deconv2d(inputconv,
              f_w=7,
              s_h=1,
              s_w=1,
-             stddev=0.02,
              padding="VALID",
              name="deconv2d",
              do_norm=True,
@@ -101,7 +98,6 @@ def deconv2d(inputconv,
     :param f_w: width of filter
     :param s_h: height of strides
     :param s_w: width of strides
-    :param stddev: standard deviation of parameters
     :param padding: method of padding
     :param name: operation name
     :param do_norm: whether normalize
