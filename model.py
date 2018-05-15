@@ -1,6 +1,5 @@
 import tensorflow as tf
 from layers import conv2d
-from layers import deconv2d
 
 tanh = tf.nn.tanh
 resize = tf.image.resize_images
@@ -23,18 +22,31 @@ def discriminator(inputdisc, name="discriminator"):
     with tf.variable_scope(name):
         f = 3
 
-        patch_input = tf.random_crop(inputdisc, [1, 64, 64, 3])
-        for _ in range(disc_batch_size):
-            patch = tf.random_crop(inputdisc, [1, 64, 64, 3])
-            patch_input = tf.concat(axis=0, values=[patch_input, patch])
+        H, W = inputdisc.get_shape().as_list()[1:3]
 
-        o_c1 = conv2d(patch_input, ndf, f, f, 2, 2, "SAME", "c1", do_norm=False)
-        o_c2 = conv2d(o_c1, ndf * 2, f, f, 2, 2, "SAME", "c2")
-        o_c3 = conv2d(o_c2, ndf * 4, f, f, 2, 2, "SAME", "c3")
-        o_c4 = conv2d(o_c3, ndf * 8, f, f, 1, 1, "SAME", "c4")
-        o_c5 = conv2d(o_c4, 1, f, f, 1, 1, "SAME", "c5", do_norm=False, do_relu=False)
+        fo_c1 = conv2d(inputdisc, ndf, f, f, 2, 2, "SAME", "fc1", do_norm=False) # [1, 128, 128, 32]
+        fo_c2 = conv2d(fo_c1, ndf * 2, f, f, 2, 2, "SAME", "fc2") # [1, 64, 64, 64]
+        fo_c3 = conv2d(fo_c2, ndf * 4, f, f, 2, 2, "SAME", "fc3") # [1, 32, 32, 128]
+        fo_c4 = conv2d(fo_c3, ndf * 8, f, f, 2, 2, "SAME", "fc4") # [1, 16, 16, 256]
+        fo_c5 = conv2d(fo_c4, ndf * 16, f, f, 2, 2, "SAME", "fc5") # [1, 8, 8, 512]
+        fo_c6 = conv2d(fo_c5, 1, f, f, 1, 1, "SAME", "fc6", do_norm=False, do_relu=False) # [1, 8, 8, 1]
 
-        return o_c5
+        tensor = resize(images=inputdisc, size=[H//2, W//2]) # [1, 128, 128, 3]
+        io_c1 = conv2d(tensor, ndf, f, f, 2, 2, "SAME", "ic1", do_norm=False) # [1, 64, 64, 32]
+        io_c2 = conv2d(io_c1, ndf * 2, f, f, 2, 2, "SAME", "ic2") # [1, 32, 32, 64]
+        io_c3 = conv2d(io_c2, ndf * 4, f, f, 2, 2, "SAME", "ic3") # [1, 16, 16, 128]
+        io_c4 = conv2d(io_c3, ndf * 8, f, f, 2, 2, "SAME", "ic4") # [1, 8, 8, 256]
+        io_c5 = conv2d(io_c4, 1, f, f, 1, 1, "SAME", "ic5", do_norm=False, do_relu=False) # [1, 8, 8, 1]
+
+        tensor = resize(images=inputdisc, size=[H//4, W//4]) # [1, 64, 64, 3]
+        bo_c1 = conv2d(tensor, ndf, f, f, 2, 2, "SAME", "bc1", do_norm=False) # [1, 32, 32, 32]
+        bo_c2 = conv2d(bo_c1, ndf * 2, f, f, 2, 2, "SAME", "bc2") # [1, 16, 16, 64]
+        bo_c3 = conv2d(bo_c2, ndf * 4, f, f, 2, 2, "SAME", "bc3") # [1, 8, 8, 128]
+        bo_c4 = conv2d(bo_c3, 1, f, f, 1, 1, "SAME", "bc4", do_norm=False, do_relu=False) # [1, 8, 8, 1]
+
+        output = tf.concat(axis=0, values=[fo_c6, io_c5, bo_c4])
+
+        return output
 
 
 def generator(inputgen, name="generator"):
@@ -55,7 +67,7 @@ def generator(inputgen, name="generator"):
         conv_blocks = []  # 用于存储图像块的卷积结果
 
         for iter in range(num_blocks):
-            img_block = resize(images=inputgen, size=[H // (scale * pow(2, iter)), W // (scale * pow(2, iter))])
+            img_block = resize(images=inputgen, size=[H//(scale * pow(2, iter)), W//(scale * pow(2, iter))])
             imgs.append(img_block)
 
         for i in range(len(imgs)):

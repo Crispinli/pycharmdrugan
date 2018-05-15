@@ -32,7 +32,7 @@ test_root_A = "./input/horse2zebra/testA"
 test_root_B = "./input/horse2zebra/testB"
 
 
-class DRUGAN():
+class Img2ImgGAN():
     def model_setup(self):
         '''
         build the model
@@ -41,17 +41,17 @@ class DRUGAN():
         self.fake_images_A = np.zeros((pool_size, batch_size, img_height, img_width, img_layer))
         self.fake_images_B = np.zeros((pool_size, batch_size, img_height, img_width, img_layer))
 
-        self.input_A = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_A")
-        self.input_B = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="input_B")
+        self.input_A = tf.placeholder(tf.float32, [batch_size, img_height, img_width, img_layer])
+        self.input_B = tf.placeholder(tf.float32, [batch_size, img_height, img_width, img_layer])
 
-        self.fake_pool_A = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="fake_pool_A")
-        self.fake_pool_B = tf.placeholder(tf.float32, [batch_size, img_width, img_height, img_layer], name="fake_pool_B")
+        self.fake_pool_A = tf.placeholder(tf.float32, [batch_size, img_height, img_width, img_layer])
+        self.fake_pool_B = tf.placeholder(tf.float32, [batch_size, img_height, img_width, img_layer])
 
         self.num_fake_inputs = 0
 
         self.lr = tf.placeholder(tf.float32, shape=[], name="lr")
 
-        with tf.variable_scope("drugan") as scope:
+        with tf.variable_scope("img2img") as scope:
             self.scope = scope
 
             self.fake_B = generator(self.input_A, name="g_A")
@@ -85,41 +85,25 @@ class DRUGAN():
         ####################
         # standard generator loss of g_A and g_B
         ####################
-        gen_loss_A = -tf.reduce_mean(self.fake_rec_B)
-        gen_loss_B = -tf.reduce_mean(self.fake_rec_A)
+        gen_loss_A = tf.reduce_mean((self.fake_rec_B - 1) ** 2)
+        gen_loss_B = tf.reduce_mean((self.fake_rec_A - 1) ** 2)
 
         ####################
         # discriminator loss with gradient penalty of d_B
         ####################
-        disc_loss_B = tf.reduce_mean(self.fake_pool_rec_B) - tf.reduce_mean(self.rec_B)
-        alpha_B = tf.random_uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
-        interpolates_B = self.input_B + alpha_B * (self.fake_B - self.input_B)
-        with tf.variable_scope(self.scope) as scope_B:
-            scope_B.reuse_variables()
-            gradients_B = tf.gradients(discriminator(interpolates_B, name="d_B"), [interpolates_B])[0]
-        slopes_B = tf.sqrt(tf.reduce_sum(tf.square(gradients_B), reduction_indices=[1]))
-        gradients_penalty_B = tf.reduce_mean((slopes_B - 1.0) ** 2)
-        disc_loss_B += 10 * gradients_penalty_B
+        disc_loss_B = (tf.reduce_mean(self.fake_pool_rec_B ** 2) + tf.reduce_mean((self.rec_B - 1) ** 2)) / 2.0
 
         ####################
         # discriminator loss with gradient penalty of d_A
         ####################
-        disc_loss_A = tf.reduce_mean(self.fake_pool_rec_A) - tf.reduce_mean(self.rec_A)
-        alpha_A = tf.random_uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
-        interpolates_A = self.input_A + alpha_A * (self.fake_A - self.input_A)
-        with tf.variable_scope(self.scope) as scope_A:
-            scope_A.reuse_variables()
-            gradients_A = tf.gradients(discriminator(interpolates_A, name="d_A"), [interpolates_A])[0]
-        slopes_A = tf.sqrt(tf.reduce_sum(tf.square(gradients_A), reduction_indices=[1]))
-        gradients_penalty_A = tf.reduce_mean((slopes_A - 1.0) ** 2)
-        disc_loss_A += 10 * gradients_penalty_A
+        disc_loss_A = (tf.reduce_mean(self.fake_pool_rec_A ** 2) + tf.reduce_mean((self.rec_A - 1) ** 2)) / 2.0
 
         self.g_loss_A = cyc_loss_A * 10 + cyc_loss_B * 10 + gen_loss_A  # g_A的损失函数
         self.g_loss_B = cyc_loss_A * 10 + cyc_loss_B * 10 + gen_loss_B  # g_B的损失函数
         self.d_loss_A = disc_loss_A  # d_A的损失函数
         self.d_loss_B = disc_loss_B  # d_B的损失函数
 
-        optimizer = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.99)
+        optimizer = tf.train.AdamOptimizer(self.lr, beta1=0.5)
 
         self.model_vars = tf.trainable_variables()
 
@@ -155,8 +139,8 @@ class DRUGAN():
             path_A = os.path.join(root_A, A_input[i])
             path_B = os.path.join(root_B, B_input[i])
             try:
-                img_A = np.array(Image.open(path_A)).reshape([batch_size, img_width, img_height, img_layer]) / 127.5 - 1
-                img_B = np.array(Image.open(path_B)).reshape([batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                img_A = np.array(Image.open(path_A)).reshape([batch_size, img_height, img_width, img_layer]) / 127.5 - 1
+                img_B = np.array(Image.open(path_B)).reshape([batch_size, img_height, img_width, img_layer]) / 127.5 - 1
             except:
                 print(path_A)
                 print(path_B)
@@ -244,9 +228,9 @@ class DRUGAN():
                     path_B = os.path.join(root_B, B_input[ptr])
                     try:
                         img_A = np.array(Image.open(path_A)).reshape(
-                            [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                            [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
                         img_B = np.array(Image.open(path_B)).reshape(
-                            [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                            [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
                     except:
                         print(path_A)
                         print(path_B)
@@ -299,7 +283,7 @@ class DRUGAN():
 
                     self.num_fake_inputs += 1
                 print("Save the model...")
-                saver.save(sess, os.path.join(ckpt_dir, "drugan"), global_step=epoch)
+                saver.save(sess, os.path.join(ckpt_dir, "img2img"), global_step=epoch)
 
     def test(self):
         '''
@@ -326,9 +310,9 @@ class DRUGAN():
                 path_B = os.path.join(test_root_B, B_input[i])
                 try:
                     img_A = np.array(Image.open(path_A)).reshape(
-                        [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                        [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
                     img_B = np.array(Image.open(path_B)).reshape(
-                        [batch_size, img_width, img_height, img_layer]) / 127.5 - 1
+                        [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
                 except:
                     print(path_A)
                     print(path_B)
@@ -347,11 +331,12 @@ class DRUGAN():
 
 
 def main():
-    model = DRUGAN()
     if to_train:
-        model.train()
-    # if to_test:
-    #     model.test()
+        train = Img2ImgGAN()
+        train.train()
+    if to_test:
+        test = Img2ImgGAN()
+        test.test()
 
 
 if __name__ == '__main__':
