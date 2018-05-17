@@ -3,13 +3,13 @@
         a. 整体结构类似 CycleGAN/DualGAN/DiscoGAN 模型，并且进行了改进
         b. 模型中的包含两个 GAN 模型，并同时进行优化
         c. 两个 GAN 当中的生成器 generator 和判别器 discriminator 的结构相同
-        d. 对每个 GAN 的生成器进行 1 次优化，然后对判别器进行 5 次优化
+        d. 对每个 GAN 的生成器进行 1 次优化，然后对判别器进行 1 次优化
         e. 模型参数使用 xavier initializer 进行初始化
     （2）生成器 generator 的结构：
-        a. 整体结构为 U-Net 的形式，并且进行了改进
-        b. 在网络的 bottom 部分包含 9 个残差块
-        c. encoder 部分的 feature map 与对应的 decoder 部分的 feature map 在通道维度上拼接
-        d. 生成器的初始通道数为 32
+        a. 整体结构为 multi-scale 的结构形式
+        b. 多个尺度的图像块宽度分别为 256 128 64 32 16
+        c. 较小图像块的卷积结果先经过双线性插值进行上采样后再与较大图像块的卷积结果在通道维度上进行拼接
+        d. 生成器的初始通道数为 32，然后按照公比为 2 的形式逐层增加
     （3）判别器 discriminator 结构：
         a. 整体结构为 multi-scale 的形式
         b. 多个尺度的图像块宽度分别为 256 128 64
