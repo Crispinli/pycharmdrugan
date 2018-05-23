@@ -26,10 +26,10 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/summer2winter/trainA"
-root_B = "./input/summer2winter/trainB"
-test_root_A = "./input/summer2winter/testA"
-test_root_B = "./input/summer2winter/testB"
+root_A = "./input/maps/trainA"
+root_B = "./input/maps/trainB"
+test_root_A = "./input/maps/testA"
+test_root_B = "./input/maps/testB"
 
 
 class Img2ImgGAN():
@@ -124,6 +124,19 @@ class Img2ImgGAN():
         self.d_A_loss_summ = tf.summary.scalar("d_A_loss", self.d_loss_A)
         self.d_B_loss_summ = tf.summary.scalar("d_B_loss", self.d_loss_B)
 
+    def read_img(self, path):
+        '''
+        read the image
+        :param path: th path of the image
+        :return: a normalized image
+        '''
+        img = Image.open(path)
+        resized_img = img.resize([img_height, img_width], Image.LANCZOS)
+        digital_img = np.array(resized_img)
+        reshaped_img = digital_img.reshape([batch_size, img_height, img_width, img_layer])
+        normalized_img = reshaped_img / 127.5 - 1
+        return normalized_img
+
     def save_training_images(self, sess, epoch, A_input, B_input):
         '''
         save the training images
@@ -139,8 +152,8 @@ class Img2ImgGAN():
             path_A = os.path.join(root_A, A_input[i])
             path_B = os.path.join(root_B, B_input[i])
             try:
-                img_A = np.array(Image.open(path_A)).reshape([batch_size, img_height, img_width, img_layer]) / 127.5 - 1
-                img_B = np.array(Image.open(path_B)).reshape([batch_size, img_height, img_width, img_layer]) / 127.5 - 1
+                img_A = self.read_img(path_A)
+                img_B = self.read_img(path_B)
             except:
                 print(path_A)
                 print(path_B)
@@ -227,10 +240,8 @@ class Img2ImgGAN():
                     path_A = os.path.join(root_A, A_input[ptr])
                     path_B = os.path.join(root_B, B_input[ptr])
                     try:
-                        img_A = np.array(Image.open(path_A)).reshape(
-                            [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
-                        img_B = np.array(Image.open(path_B)).reshape(
-                            [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
+                        img_A = self.read_img(path_A)
+                        img_B = self.read_img(path_B)
                     except:
                         print(path_A)
                         print(path_B)
@@ -309,10 +320,8 @@ class Img2ImgGAN():
                 path_A = os.path.join(test_root_A, A_input[i])
                 path_B = os.path.join(test_root_B, B_input[i])
                 try:
-                    img_A = np.array(Image.open(path_A)).reshape(
-                        [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
-                    img_B = np.array(Image.open(path_B)).reshape(
-                        [batch_size, img_height, img_width, img_layer]) / 127.5 - 1
+                    img_A = self.read_img(path_A)
+                    img_B = self.read_img(path_B)
                 except:
                     print(path_A)
                     print(path_B)
