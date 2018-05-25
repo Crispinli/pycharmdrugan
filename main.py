@@ -17,7 +17,7 @@ ckpt_dir = "./output/checkpoint"  # 检查点路径
 max_images = 1000  # 数组中最多存储的训练/测试数据（batch_size, img_height, img_width, img_layer）数目
 pool_size = 50  # 用于更新D的假图像的批次数
 max_epoch = 100  # 每次训练的epoch数目
-n_critic = 1  # 判别器训练的次数
+n_critic = 5  # 判别器训练的次数
 
 img_height = 256  # 图像高度
 img_width = 256  # 图像宽度
@@ -85,18 +85,34 @@ class Img2ImgGAN():
         ####################
         # standard generator loss of g_A and g_B
         ####################
-        gen_loss_A = tf.reduce_mean((self.fake_rec_B - 1) ** 2)
-        gen_loss_B = tf.reduce_mean((self.fake_rec_A - 1) ** 2)
+        gen_loss_A = -tf.reduce_mean(self.fake_rec_B)
+        gen_loss_B = -tf.reduce_mean(self.fake_rec_A)
 
         ####################
         # discriminator loss with gradient penalty of d_B
         ####################
-        disc_loss_B = (tf.reduce_mean(self.fake_pool_rec_B ** 2) + tf.reduce_mean((self.rec_B - 1) ** 2)) / 2.0
+        disc_loss_B = tf.reduce_mean(self.fake_pool_rec_B) - tf.reduce_mean(self.rec_B)
+        alpha_B = tf.random_uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
+        interpolates_B = self.input_B + alpha_B * (self.fake_B - self.input_B)
+        with tf.variable_scope(self.scope) as scope_B:
+            scope_B.reuse_variables()
+            gradients_B = tf.gradients(discriminator(interpolates_B, name="d_B"), [interpolates_B])[0]
+        slopes_B = tf.sqrt(tf.reduce_sum(tf.square(gradients_B), reduction_indices=[1]))
+        gradients_penalty_B = tf.reduce_mean((slopes_B - 1.0) ** 2)
+        disc_loss_B += 10 * gradients_penalty_B
 
         ####################
         # discriminator loss with gradient penalty of d_A
         ####################
-        disc_loss_A = (tf.reduce_mean(self.fake_pool_rec_A ** 2) + tf.reduce_mean((self.rec_A - 1) ** 2)) / 2.0
+        disc_loss_A = tf.reduce_mean(self.fake_pool_rec_A) - tf.reduce_mean(self.rec_A)
+        alpha_A = tf.random_uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
+        interpolates_A = self.input_A + alpha_A * (self.fake_A - self.input_A)
+        with tf.variable_scope(self.scope) as scope_A:
+            scope_A.reuse_variables()
+            gradients_A = tf.gradients(discriminator(interpolates_A, name="d_A"), [interpolates_A])[0]
+        slopes_A = tf.sqrt(tf.reduce_sum(tf.square(gradients_A), reduction_indices=[1]))
+        gradients_penalty_A = tf.reduce_mean((slopes_A - 1.0) ** 2)
+        disc_loss_A += 10 * gradients_penalty_A
 
         self.g_loss_A = cyc_loss_A * 10 + cyc_loss_B * 10 + gen_loss_A  # g_A的损失函数
         self.g_loss_B = cyc_loss_A * 10 + cyc_loss_B * 10 + gen_loss_B  # g_B的损失函数
@@ -155,8 +171,7 @@ class Img2ImgGAN():
                 img_A = self.read_img(path_A)
                 img_B = self.read_img(path_B)
             except:
-                print(path_A)
-                print(path_B)
+                print(path_A, path_B)
                 print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                 continue
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run(
@@ -228,9 +243,6 @@ class Img2ImgGAN():
                 print("In the epoch ", epoch)
                 # 按照条件调整学习率
                 curr_lr = 2e-4 - epoch * 2e-6
-                # 打乱输入 A 与输入 B 的对应顺序
-                random.shuffle(A_input)
-                random.shuffle(B_input)
                 # 保存生成的图像
                 if (save_training_images):
                     print("Save the training images...")
@@ -243,8 +255,7 @@ class Img2ImgGAN():
                         img_A = self.read_img(path_A)
                         img_B = self.read_img(path_B)
                     except:
-                        print(path_A)
-                        print(path_B)
+                        print(path_A, path_B)
                         print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                         continue
                     # Optimizing the G_A network
@@ -323,8 +334,7 @@ class Img2ImgGAN():
                     img_A = self.read_img(path_A)
                     img_B = self.read_img(path_B)
                 except:
-                    print(path_A)
-                    print(path_B)
+                    print(path_A, path_B)
                     print("Can not open this image, skip this iteration,", sys._getframe().f_code.co_name)
                     continue
                 fake_A_temp, fake_B_temp = sess.run(
