@@ -26,10 +26,10 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/maps/trainA"
-root_B = "./input/maps/trainB"
-test_root_A = "./input/maps/testA"
-test_root_B = "./input/maps/testB"
+root_A = "./input/horse2zebra/trainA"
+root_B = "./input/horse2zebra/trainB"
+test_root_A = "./input/horse2zebra/testA"
+test_root_B = "./input/horse2zebra/testB"
 
 
 class Img2ImgGAN():
@@ -164,9 +164,13 @@ class Img2ImgGAN():
         '''
         if not os.path.exists("./output/imgs"):
             os.makedirs("./output/imgs")
-        for i in range(0, 10):
-            path_A = os.path.join(root_A, A_input[i])
-            path_B = os.path.join(root_B, B_input[i])
+        input_A = A_input[:]
+        input_B = B_input[:]
+        random.shuffle(input_A)
+        random.shuffle(input_B)
+        for i in range(10):
+            path_A = os.path.join(root_A, input_A[i])
+            path_B = os.path.join(root_B, input_B[i])
             try:
                 img_A = self.read_img(path_A)
                 img_B = self.read_img(path_B)
