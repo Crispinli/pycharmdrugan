@@ -26,10 +26,10 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/horse2zebra/trainA"
-root_B = "./input/horse2zebra/trainB"
-test_root_A = "./input/horse2zebra/testA"
-test_root_B = "./input/horse2zebra/testB"
+root_A = "./input/summer2winter/trainA"
+root_B = "./input/summer2winter/trainB"
+test_root_A = "./input/summer2winter/testA"
+test_root_B = "./input/summer2winter/testB"
 
 
 class Img2ImgGAN():
@@ -359,7 +359,7 @@ def main():
         model.train()
     # if to_test:
     #     model.test()
-
-
+#
+#
 if __name__ == '__main__':
     main()
