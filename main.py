@@ -26,10 +26,10 @@ batch_size = 1  # 一个批次的数据中图像的个数
 
 save_training_images = True  # 是否存储训练数据
 
-root_A = "./input/summer2winter/trainA"
-root_B = "./input/summer2winter/trainB"
-test_root_A = "./input/summer2winter/testA"
-test_root_B = "./input/summer2winter/testB"
+root_A = "./input/monet2photo/trainA"
+root_B = "./input/monet2photo/trainB"
+test_root_A = "./input/monet2photo/testA"
+test_root_B = "./input/monet2photo/testB"
 
 
 class Img2ImgGAN():
