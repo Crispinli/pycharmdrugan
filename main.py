@@ -8,6 +8,11 @@ import tensorflow as tf
 import os
 import sys
 
+# 限定GPU显存的使用比例
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 0.4
+
 to_train = True  # 是否训练
 to_test = True  # 是否测试
 to_restore = True  # 是否存储检查点（参数）
@@ -231,7 +236,7 @@ class Img2ImgGAN():
         A_input = os.listdir(root_A)
         B_input = os.listdir(root_B)
         saver = tf.train.Saver()
-        with tf.Session() as sess:
+        with tf.Session(config=config) as sess:
             print("The log writer...")
             writer = tf.summary.FileWriter(logdir=log_dir, graph=sess.graph)
             print("Initializing the global variables...")
@@ -322,7 +327,7 @@ class Img2ImgGAN():
         B_input = os.listdir(test_root_B)
         saver = tf.train.Saver()
         init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-        with tf.Session() as sess:
+        with tf.Session(config=config) as sess:
             sess.run(init)
             chkpt_fname = tf.train.latest_checkpoint(ckpt_dir)
             print("Restore the model...")
